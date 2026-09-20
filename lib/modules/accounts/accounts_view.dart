@@ -74,12 +74,13 @@ class AccountsView extends GetView<AccountsController> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: null,
-        onPressed: () => Get.toNamed(Routes.accountForm),
-        icon: const Icon(Icons.add),
-        label: const Text('Nouveau compte'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Nouveau compte',
+            onPressed: () => Get.toNamed(Routes.accountForm),
+          ),
+        ],
       ),
       body: Obx(() {
         if (repo.accounts.isEmpty) {

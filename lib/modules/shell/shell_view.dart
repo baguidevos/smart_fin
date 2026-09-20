@@ -95,14 +95,41 @@ class ShellView extends GetView<ShellController> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: null,
-        onPressed: () => _nouvelleOperation(context),
-        backgroundColor: cs.primaryContainer,
-        foregroundColor: cs.onPrimaryContainer,
-        icon: const Icon(Icons.add),
-        label: const Text('Ajouter'),
-      ),
+      floatingActionButton: Obx(() {
+        final index = c.tabIndex.value;
+        switch (index) {
+          case 0: // Accueil
+          case 2: // Historique
+            return FloatingActionButton.extended(
+              heroTag: null,
+              onPressed: () => _nouvelleOperation(context),
+              backgroundColor: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
+              icon: const Icon(Icons.add),
+              label: const Text('Ajouter'),
+            );
+          case 1: // Comptes
+            return FloatingActionButton.extended(
+              heroTag: null,
+              onPressed: () => Get.toNamed(Routes.accountForm),
+              backgroundColor: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
+              icon: const Icon(Icons.add),
+              label: const Text('Nouveau compte'),
+            );
+          case 3: // Dettes
+            return FloatingActionButton.extended(
+              heroTag: null,
+              onPressed: () => Get.toNamed(Routes.debtForm),
+              backgroundColor: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
+              icon: const Icon(Icons.account_balance),
+              label: const Text('Nouvel emprunt'),
+            );
+          default:
+            return const SizedBox.shrink();
+        }
+      }),
     );
   }
 

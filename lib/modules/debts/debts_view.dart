@@ -75,12 +75,13 @@ class DebtsView extends GetView<DebtsController> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: null,
-        onPressed: () => Get.toNamed(Routes.debtForm),
-        icon: const Icon(Icons.account_balance),
-        label: const Text("Nouvel emprunt"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: "Nouvel emprunt",
+            onPressed: () => Get.toNamed(Routes.debtForm),
+          ),
+        ],
       ),
       body: Obx(() {
         if (controller.repo.debts.isEmpty) {
