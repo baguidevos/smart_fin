@@ -1,0 +1,88 @@
+name: Build & Release SamaFi
+
+on:
+  push:
+    branches:
+      - release
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ☕ Setup Java (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🔍 Verify code (Analyze & Test)
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: 🔨 Build Release APK
+        run: flutter build apk --release
+
+      - name: 🏷️ Determine Version / Tag
+        id: get_version
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | head -n 1 | awk '{print $2}' | cut -d '+' -f 1)
+          TAG_NAME="v$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: 📋 Prepare Artifacts
+        run: |
+          mkdir -p release-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk release-artifacts/samafi-mobile-${{ steps.get_version.outputs.tag }}.apk
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: "SamaFi Mobile ${{ steps.get_version.outputs.tag }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-artifacts/samafi-mobile-${{ steps.get_version.outputs.tag }}.apk
+          body: |
+            ### 🎉 SamaFi Mobile ${{ steps.get_version.outputs.tag }}
+
+            Application mobile de gestion financière personnelle intelligente (devise FCFA, 100 % hors-ligne).
+
+            #### ✨ Principales fonctionnalités :
+            * 🏠 **Tableau de bord** : Patrimoine net, Argent du jour, flux des 30 derniers jours et répartition des dépenses.
+            * 📥 **Encaissements ventilés** : Répartition obligatoire du montant total sur les comptes.
+            * 🧾 **Dettes & Emprunts** : Suivi des remboursements avec plafonnement automatique.
+            * 🤝 **Fonds tiers (fiducie)** : Dépenses objet, traçabilité des détournements et créances internes.
+            * 👥 **Tontines & Achats planifiés** : Suivi des tours de table et cagnottes d'achats.
+
+            #### 📲 Installation :
+            Téléchargez l'APK ci-dessous pour installer l'application sur votre appareil Android.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
