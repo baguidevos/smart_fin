@@ -1,4 +1,4 @@
-name: Build & Release SamaFi
+name: Build & Release SmartFin
 
 on:
   push:
@@ -58,20 +58,20 @@ jobs:
       - name: 📋 Prepare Artifacts
         run: |
           mkdir -p release-artifacts
-          cp build/app/outputs/flutter-apk/app-release.apk release-artifacts/samafi-mobile-${{ steps.get_version.outputs.tag }}.apk
+          cp build/app/outputs/flutter-apk/app-release.apk release-artifacts/SmartFin-${{ steps.get_version.outputs.tag }}.apk
 
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_version.outputs.tag }}
-          name: "SamaFi Mobile ${{ steps.get_version.outputs.tag }}"
+          name: "SmartFin ${{ steps.get_version.outputs.tag }}"
           draft: false
           prerelease: false
           generate_release_notes: true
           files: |
-            release-artifacts/samafi-mobile-${{ steps.get_version.outputs.tag }}.apk
+            release-artifacts/SmartFin-${{ steps.get_version.outputs.tag }}.apk
           body: |
-            ### 🎉 SamaFi Mobile ${{ steps.get_version.outputs.tag }}
+            ### 🎉 SmartFin ${{ steps.get_version.outputs.tag }}
 
             Application mobile de gestion financière personnelle intelligente (devise FCFA, 100 % hors-ligne).
 

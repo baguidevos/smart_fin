@@ -1,6 +1,6 @@
 name: samafi_mobile
 description: >-
-  SamaFi — gestion financière personnelle intelligente (devise FCFA).
+  SmartFin — gestion financière personnelle intelligente (devise FCFA).
   Version mobile Flutter hors-ligne : multi-comptes, ventilation des
   encaissements, dettes et remboursements, fonds tiers, tontines, achats
   planifiés. Gestion de routes et d'état avec GetX.

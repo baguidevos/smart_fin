@@ -74,7 +74,7 @@ class MoreView extends GetView<MoreController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              name.isEmpty ? 'Utilisateur SamaFi' : name,
+                              name.isEmpty ? 'Utilisateur SmartFin' : name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(

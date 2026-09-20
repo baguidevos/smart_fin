@@ -32,7 +32,7 @@ class SamafiApp extends StatelessWidget {
     final repo = Get.find<FinanceRepository>();
     return Obx(
       () => GetMaterialApp(
-        title: 'SamaFi',
+        title: 'SmartFin',
         debugShowCheckedModeBanner: false,
         locale: const Locale('fr', 'FR'),
         fallbackLocale: const Locale('fr', 'FR'),

@@ -63,7 +63,7 @@ class SplashView extends GetView<SplashController> {
               ),
               const SizedBox(height: 22),
               const Text(
-                'SamaFi',
+                'SmartFin',
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w900,

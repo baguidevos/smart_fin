@@ -42,7 +42,7 @@ class SettingsController extends GetxController {
     try {
       await Share.share(
         repo.exportTransactionsCsv(),
-        subject: 'SamaFi — Historique des opérations',
+        subject: 'SmartFin — Historique des opérations',
       );
     } catch (e) {
       errorSnack(e);

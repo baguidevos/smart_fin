@@ -1,6 +1,6 @@
 {
-    "name": "samafi_mobile",
-    "short_name": "samafi_mobile",
+    "name": "SmartFin",
+    "short_name": "SmartFin",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

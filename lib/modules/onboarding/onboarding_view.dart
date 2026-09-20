@@ -81,7 +81,7 @@ class OnboardingView extends GetView<OnboardingController> {
                   ),
                   const SizedBox(height: 18),
                   const Text(
-                    'SamaFi',
+                    'SmartFin',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,

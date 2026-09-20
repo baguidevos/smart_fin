@@ -56,3 +56,7 @@ build/
 
 # Coverage
 coverage/
+
+# APK binaries
+*.apk
+
