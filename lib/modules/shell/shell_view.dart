@@ -96,6 +96,7 @@ class ShellView extends GetView<ShellController> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _nouvelleOperation(context),
         backgroundColor: cs.primaryContainer,
         foregroundColor: cs.onPrimaryContainer,

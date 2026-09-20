@@ -54,6 +54,7 @@ class PurchasesView extends GetView<PurchasesController> {
     return Scaffold(
       appBar: AppBar(title: const Text("Achats planifiés")),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => Get.toNamed(Routes.purchaseForm),
         icon: const Icon(Icons.shopping_bag_outlined),
         label: const Text("Planifier un achat"),

@@ -76,6 +76,7 @@ class AccountsView extends GetView<AccountsController> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => Get.toNamed(Routes.accountForm),
         icon: const Icon(Icons.add),
         label: const Text('Nouveau compte'),

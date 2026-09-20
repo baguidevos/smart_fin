@@ -42,6 +42,7 @@ class TontinesView extends GetView<TontinesController> {
     return Scaffold(
       appBar: AppBar(title: const Text("Tontines")),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => Get.toNamed(Routes.tontineForm),
         icon: const Icon(Icons.groups_outlined),
         label: const Text("Nouvelle tontine"),

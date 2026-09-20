@@ -31,6 +31,7 @@ class FundsView extends GetView<FundsController> {
     return Scaffold(
       appBar: AppBar(title: const Text("Fonds tiers")),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => Get.toNamed(Routes.fundForm),
         icon: const Icon(Icons.volunteer_activism_outlined),
         label: const Text("Recevoir un fonds"),

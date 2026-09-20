@@ -77,6 +77,7 @@ class DebtsView extends GetView<DebtsController> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => Get.toNamed(Routes.debtForm),
         icon: const Icon(Icons.account_balance),
         label: const Text("Nouvel emprunt"),
