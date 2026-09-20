@@ -1,0 +1,43 @@
+name: samafi_mobile
+description: >-
+  SamaFi — gestion financière personnelle intelligente (devise FCFA).
+  Version mobile Flutter hors-ligne : multi-comptes, ventilation des
+  encaissements, dettes et remboursements, fonds tiers, tontines, achats
+  planifiés. Gestion de routes et d'état avec GetX.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # GetX : gestion de routes (GetPage / Get.toNamed / navigation imbriquée),
+  # gestion d'état réactive (Rx / Obx) et injection de dépendances (Get.put / Get.find).
+  get: ^4.6.6
+
+  # Persistance locale légère (clé → valeur) pour toutes les données hors-ligne.
+  get_storage: ^2.1.1
+
+  # Formatage français des montants et dates.
+  intl: ^0.20.2
+
+  # Graphiques du tableau de bord (camembert des dépenses, barres des flux).
+  fl_chart: ^0.68.0
+
+  # Partage de l'export CSV (transactions).
+  share_plus: ^7.2.2
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

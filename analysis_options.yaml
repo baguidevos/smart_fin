@@ -1,0 +1,17 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Le projet privilégie des widgets const quand c'est possible.
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    # Les libellés français contiennent souvent des apostrophes : on autorise
+    # les chaînes interpolées simples sans warning.
+    unnecessary_string_interpolations: false
+    avoid_print: false
+
+analyzer:
+  errors:
+    # Les dépréciations de fl_chart/intl entre versions mineures ne doivent pas
+    # bloquer la compilation.
+    deprecated_member_use: ignore
