@@ -5,7 +5,7 @@ description: >-
   encaissements, dettes et remboursements, fonds tiers, tontines, achats
   planifiés. Gestion de routes et d'état avec GetX.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:samafi_mobile/data/repository.dart';
@@ -34,65 +35,80 @@ class SplashView extends GetView<SplashController> {
     // L'accès au contrôleur déclenche son instanciation (lazyPut du binding)
     // et donc sa méthode onReady, qui programme la navigation temporisée.
     final c = controller;
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF059669), Color(0xFF0f766e)],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF0f766e),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0f766e),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF059669), Color(0xFF0f766e)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 5),
-              // Logo : cercle blanc translucide + icône épargne.
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.16),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.savings_rounded,
-                  size: 48,
-                  color: Colors.white,
-                ),
+          child: SafeArea(
+            child: SizedBox.expand(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Spacer(flex: 5),
+                  // Logo : cercle blanc translucide + icône épargne.
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.savings_rounded,
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'SmartFin',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Votre argent, clairement.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 15, color: Colors.white70),
+                  ),
+                  const Spacer(flex: 4),
+                  // Petit indicateur de chargement blanc.
+                  Obx(
+                    () => SizedBox(
+                      height: 26,
+                      width: 26,
+                      child: c.visible.value
+                          ? const CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: Colors.white,
+                            )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                ],
               ),
-              const SizedBox(height: 22),
-              const Text(
-                'SmartFin',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                "Votre argent, clairement.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: Colors.white70),
-              ),
-              const Spacer(flex: 4),
-              // Petit indicateur de chargement blanc, masqué au départ.
-              Obx(
-                () => SizedBox(
-                  height: 26,
-                  width: 26,
-                  child: c.visible.value
-                      ? const CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
-                        )
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 36),
-            ],
+            ),
           ),
         ),
       ),

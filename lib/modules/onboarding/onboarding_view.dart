@@ -63,7 +63,7 @@ class OnboardingView extends GetView<OnboardingController> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 36, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -71,35 +71,35 @@ class OnboardingView extends GetView<OnboardingController> {
               Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(22),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: cs.primary.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.savings_rounded,
-                        size: 42, color: cs.primary),
+                        size: 38, color: cs.primary),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 12),
                   const Text(
                     'SmartFin',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 28,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.8,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     'Comptabilité personnelle intelligente — FCFA',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 13,
                       color: cs.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
               // ---- atouts ------------------------------------------------
               _benefit(
                 context,
@@ -129,7 +129,7 @@ class OnboardingView extends GetView<OnboardingController> {
                 description:
                     "Aucun compte, aucun réseau : tout est enregistré localement sur votre téléphone.",
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               // ---- prénom --------------------------------------------------
               LabeledField(
                 label: 'Comment vous appeler ?',
@@ -141,34 +141,51 @@ class OnboardingView extends GetView<OnboardingController> {
                   ),
                 ),
               ),
-              // ---- actions -------------------------------------------------
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: Border(
+              top: BorderSide(color: cs.outlineVariant.withOpacity(0.35)),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Obx(
                 () => FilledButton(
                   onPressed: c.busy.value ? null : c.creerComptes,
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
+                    minimumSize: const Size.fromHeight(48),
                   ),
                   child: const Text('Créer mes comptes'),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Obx(
                 () => OutlinedButton(
                   onPressed: c.busy.value ? null : c.chargerDemo,
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
+                    minimumSize: const Size.fromHeight(44),
                   ),
                   child: const Text('Explorer avec la démo'),
                 ),
               ),
-              const SizedBox(height: 18),
-              // ---- note discrète -------------------------------------------
+              const SizedBox(height: 6),
               Text(
                 '6 comptes de départ seront créés : caisse, charges fixes, 3 enveloppes, épargne.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 11.5,
-                  height: 1.45,
+                  fontSize: 11,
+                  height: 1.3,
                   color: cs.onSurfaceVariant.withOpacity(0.85),
                 ),
               ),
