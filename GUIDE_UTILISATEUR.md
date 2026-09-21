@@ -198,3 +198,23 @@ Cela signifie que le solde de vos comptes ayant le rôle **« Caisse »** est à
 
 #### 4. Comment retrouver le détail exact d'une ancienne opération ?
 Rendez-vous dans l'onglet **Historique**. Faites un **appui long** sur n'importe quelle ligne : une fenêtre s'ouvrira avec la **piste d'audit complète**, l'heure exacte et l'explication de l'opération !
+
+---
+
+## 💾 10. Sauvegardes et Restauration de Données (v1.1.0)
+
+SmartFin est une application 100 % hors-ligne : vous êtes l'unique propriétaire de vos données. Pour vous permettre de changer de téléphone ou de sécuriser vos comptes, un système complet de sauvegarde et restauration est intégré.
+
+### Comment restaurer une ancienne sauvegarde ?
+Vous pouvez restaurer une sauvegarde :
+1. **Dès le premier lancement (Écran d'onboarding) :**
+   * Cliquez sur le bouton **« Sauvegarde (v1.1.0) »** en bas d'écran.
+   * Choisissez soit **« Sélectionner un fichier .json »** (pour charger votre fichier depuis Google Drive, WhatsApp ou vos téléchargements), soit **« Coller le code JSON »** (si vous avez copié le texte brut).
+   * L'application restaure instantanément tous vos comptes, opérations, dettes, tontines et fiducies et vous ouvre directement votre tableau de bord !
+2. **Depuis les Paramètres (à tout moment) :**
+   * Rendez-vous dans l'onglet **Plus** > **Paramètres**.
+   * Dans la section **Données & Sauvegardes**, appuyez sur **« Importer une sauvegarde (v1.1.0) »**.
+
+### Comment exporter une sauvegarde pour la mettre en lieu sûr ?
+* Rendez-vous dans **Plus** > **Paramètres** > **« Exporter la sauvegarde (JSON v1.1.0) »**.
+* Partagez ou enregistrez le fichier via vos applications favorites (Drive, Email, WhatsApp, etc.).

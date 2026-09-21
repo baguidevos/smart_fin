@@ -3,6 +3,10 @@
 /// scénario de démonstration.
 library;
 
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -50,6 +54,156 @@ class OnboardingController extends GetxController {
     } finally {
       busy.value = false;
     }
+  }
+
+  /// Propose le choix entre parcourir les fichiers de l'appareil ou coller du JSON.
+  void choisirModeImportation(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Importer une sauvegarde (v1.1.0)',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Restaurez l\'ensemble de vos comptes et opérations.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.folder_open_outlined),
+              ),
+              title: const Text('Sélectionner un fichier .json'),
+              subtitle: const Text('Depuis vos téléchargements, Google Drive, etc.'),
+              onTap: () {
+                Get.back();
+                importerFichierJson();
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.content_paste_outlined),
+              ),
+              title: const Text('Coller le code JSON'),
+              subtitle: const Text('Si vous avez copié le texte de la sauvegarde'),
+              onTap: () {
+                Get.back();
+                ouvrirDialogueCollerJson(context);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Sélectionne un fichier JSON sur le smartphone et le restaure.
+  Future<void> importerFichierJson() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      busy.value = true;
+      final file = result.files.first;
+      String content;
+      if (file.bytes != null) {
+        content = utf8.decode(file.bytes!);
+      } else if (file.path != null) {
+        content = await File(file.path!).readAsString();
+      } else {
+        throw 'Impossible de lire le fichier de sauvegarde sélectionné.';
+      }
+
+      final summary = repo.importBackupJson(content);
+      Get.offNamed(Routes.shell);
+      successSnack(
+        'Sauvegarde restaurée avec succès !',
+        'Bonjour ${summary.profileName} : ${summary.accountsCount} comptes et ${summary.transactionsCount} opérations restaurés.',
+      );
+    } catch (e) {
+      errorSnack(e);
+    } finally {
+      busy.value = false;
+    }
+  }
+
+  /// Ouvre un dialogue pour coller manuellement le texte JSON.
+  void ouvrirDialogueCollerJson(BuildContext context) {
+    final textCtrl = TextEditingController();
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Coller la sauvegarde'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Collez ci-dessous le contenu JSON de votre sauvegarde (v1.1.0) :',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: textCtrl,
+                maxLines: 8,
+                decoration: const InputDecoration(
+                  hintText: '{\n  "version": "1.1.0",\n  ...\n}',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final raw = textCtrl.text.trim();
+              if (raw.isEmpty) return;
+              Get.back();
+              busy.value = true;
+              try {
+                final summary = repo.importBackupJson(raw);
+                Get.offNamed(Routes.shell);
+                successSnack(
+                  'Sauvegarde restaurée avec succès !',
+                  'Bonjour ${summary.profileName} : ${summary.accountsCount} comptes et ${summary.transactionsCount} opérations restaurés.',
+                );
+              } catch (e) {
+                errorSnack(e);
+              } finally {
+                busy.value = false;
+              }
+            },
+            child: const Text('Importer'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -170,18 +324,41 @@ class OnboardingView extends GetView<OnboardingController> {
                 ),
               ),
               const SizedBox(height: 8),
-              Obx(
-                () => OutlinedButton(
-                  onPressed: c.busy.value ? null : c.chargerDemo,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(44),
+              Row(
+                children: [
+                  Expanded(
+                    child: Obx(
+                      () => OutlinedButton(
+                        onPressed: c.busy.value ? null : c.chargerDemo,
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(42),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                        child: const Text('Explorer la démo'),
+                      ),
+                    ),
                   ),
-                  child: const Text('Explorer avec la démo'),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Obx(
+                      () => OutlinedButton.icon(
+                        onPressed: c.busy.value
+                            ? null
+                            : () => c.choisirModeImportation(context),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(42),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                        icon: const Icon(Icons.file_upload_outlined, size: 16),
+                        label: const Text('Sauvegarde (v1.1.0)'),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
-                '6 comptes de départ seront créés : caisse, charges fixes, 3 enveloppes, épargne.',
+                'Importez une sauvegarde v1.1.0 ou commencez avec 6 comptes.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,

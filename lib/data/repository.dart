@@ -1334,6 +1334,113 @@ class FinanceRepository extends GetxService {
     return rows.join('\n');
   }
 
+  /// Génère une sauvegarde complète de toutes les données au format JSON (version 1.1.0).
+  String exportBackupJson() {
+    final payload = {
+      'version': '1.1.0',
+      'appName': 'SmartFin',
+      'exportedAt': DateTime.now().toIso8601String(),
+      'data': {
+        'profileName': profileName.value,
+        'onboarded': onboarded.value,
+        'darkMode': darkMode.value,
+        'accounts': accounts.map((a) => a.toJson()).toList(),
+        'transactions': transactions.map((t) => t.toJson()).toList(),
+        'debts': debts.map((d) => d.toJson()).toList(),
+        'repayments': repayments.map((r) => r.toJson()).toList(),
+        'tontines': tontines.map((t) => t.toJson()).toList(),
+        'funds': funds.map((f) => f.toJson()).toList(),
+        'purchases': purchases.map((p) => p.toJson()).toList(),
+      },
+    };
+    return const JsonEncoder.withIndent('  ').convert(payload);
+  }
+
+  /// Restaure une sauvegarde complète (version 1.1.0 ou versions compatibles).
+  ///
+  /// Prend en charge les formats imbriqués sous `data` ou à plat,
+  /// les listes sérialisées ou brutes, et persiste immédiatement l'état.
+  ({int accountsCount, int transactionsCount, int debtsCount, String profileName})
+      importBackupJson(String jsonString) {
+    if (jsonString.trim().isEmpty) {
+      throw const FormatException('Le fichier de sauvegarde est vide.');
+    }
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(jsonString);
+    } catch (e) {
+      throw FormatException('Fichier JSON invalide : $e');
+    }
+
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException(
+          'Structure de sauvegarde invalide (objet JSON attendu).');
+    }
+
+    // Extraction tolérante : soit sous "data", soit directement à la racine
+    final Map<String, dynamic> dataMap = (decoded['data'] is Map<String, dynamic>)
+        ? decoded['data'] as Map<String, dynamic>
+        : decoded;
+
+    List<T> parseList<T>(String key, T Function(Map<String, dynamic>) fromJson) {
+      final val = dataMap[key];
+      if (val == null) return [];
+      if (val is List) {
+        return val
+            .whereType<Map<String, dynamic>>()
+            .map((item) => fromJson(item))
+            .toList();
+      }
+      if (val is String && val.isNotEmpty) {
+        try {
+          final subList = jsonDecode(val);
+          if (subList is List) {
+            return subList
+                .whereType<Map<String, dynamic>>()
+                .map((item) => fromJson(item))
+                .toList();
+          }
+        } catch (_) {}
+      }
+      return [];
+    }
+
+    final newAccounts = parseList('accounts', Account.fromJson);
+    final newTransactions = parseList('transactions', Transaction.fromJson);
+    final newDebts = parseList('debts', Debt.fromJson);
+    final newRepayments = parseList('repayments', DebtRepayment.fromJson);
+    final newTontines = parseList('tontines', Tontine.fromJson);
+    final newFunds = parseList('funds', ThirdPartyFund.fromJson);
+    final newPurchases = parseList('purchases', Purchase.fromJson);
+
+    final rawName = dataMap['profileName'] as String?;
+    final newProfileName = (rawName != null && rawName.trim().isNotEmpty)
+        ? rawName.trim()
+        : (profileName.value.isNotEmpty ? profileName.value : 'Utilisateur SmartFin');
+    final newDarkMode = dataMap['darkMode'] as bool? ?? true;
+
+    profileName.value = newProfileName;
+    onboarded.value = true;
+    darkMode.value = newDarkMode;
+    accounts.value = newAccounts;
+    transactions.value = newTransactions;
+    debts.value = newDebts;
+    repayments.value = newRepayments;
+    tontines.value = newTontines;
+    funds.value = newFunds;
+    purchases.value = newPurchases;
+
+    _commit();
+
+    return (
+      accountsCount: newAccounts.length,
+      transactionsCount: newTransactions.length,
+      debtsCount: newDebts.length,
+      profileName: newProfileName,
+    );
+  }
+
   // -- données de démonstration ------------------------------------------------------
 
   /// Rejoue un mois type : salaires ventilés, dépenses catégorisées, achat

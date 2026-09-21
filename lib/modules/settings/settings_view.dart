@@ -2,6 +2,10 @@
 /// (export CSV, rechargement de la démo, réinitialisation) et « À propos ».
 library;
 
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
@@ -49,10 +53,163 @@ class SettingsController extends GetxController {
     }
   }
 
+  /// Exporte la sauvegarde complète de l'application en JSON (v1.1.0).
+  Future<void> exportBackup() async {
+    try {
+      final jsonStr = repo.exportBackupJson();
+      await Share.share(
+        jsonStr,
+        subject: 'SmartFin — Sauvegarde complète (v1.1.0)',
+      );
+    } catch (e) {
+      errorSnack(e);
+    }
+  }
+
+  /// Propose d'importer une sauvegarde complète depuis un fichier ou texte.
+  void importBackup(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Importer une sauvegarde (v1.1.0)',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Attention : cette opération remplacera les données actuelles.',
+                    style: TextStyle(fontSize: 13, color: Colors.orange),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.folder_open_outlined),
+              ),
+              title: const Text('Sélectionner un fichier .json'),
+              subtitle: const Text('Depuis vos téléchargements ou le stockage'),
+              onTap: () {
+                Get.back();
+                _importerFichierJson();
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.content_paste_outlined),
+              ),
+              title: const Text('Coller le code JSON'),
+              subtitle: const Text('Si vous avez copié le texte de la sauvegarde'),
+              onTap: () {
+                Get.back();
+                _ouvrirDialogueCollerJson(context);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _importerFichierJson() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      String content;
+      if (file.bytes != null) {
+        content = utf8.decode(file.bytes!);
+      } else if (file.path != null) {
+        content = await File(file.path!).readAsString();
+      } else {
+        throw 'Impossible de lire le fichier sélectionné.';
+      }
+      final summary = repo.importBackupJson(content);
+      nameCtrl.text = summary.profileName;
+      successSnack(
+        'Sauvegarde restaurée !',
+        '${summary.accountsCount} comptes et ${summary.transactionsCount} opérations restaurés.',
+      );
+    } catch (e) {
+      errorSnack(e);
+    }
+  }
+
+  void _ouvrirDialogueCollerJson(BuildContext context) {
+    final textCtrl = TextEditingController();
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Coller la sauvegarde'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Collez le code JSON de votre sauvegarde version 1.1.0 :',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: textCtrl,
+                maxLines: 8,
+                decoration: const InputDecoration(
+                  hintText: '{\n  "version": "1.1.0",\n  ...\n}',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final raw = textCtrl.text.trim();
+              if (raw.isEmpty) return;
+              Get.back();
+              try {
+                final summary = repo.importBackupJson(raw);
+                nameCtrl.text = summary.profileName;
+                successSnack(
+                  'Sauvegarde restaurée !',
+                  '${summary.accountsCount} comptes et ${summary.transactionsCount} opérations restaurés.',
+                );
+              } catch (e) {
+                errorSnack(e);
+              }
+            },
+            child: const Text('Importer'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Rejoue le scénario de démonstration complet (après confirmation).
   void reloadDemo() {
     try {
       repo.seedDemo();
+      nameCtrl.text = repo.profileName.value;
       successSnack(
         'Données de démonstration rechargées',
         'Le scénario complet a été rejoué.',
@@ -125,11 +282,29 @@ class SettingsView extends GetView<SettingsController> {
             ),
           ),
           // ---- données -----------------------------------------------------
-          const SectionHeader(title: 'Données'),
+          const SectionHeader(title: 'Données & Sauvegardes'),
           Card(
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.download_for_offline_outlined),
+                  title: const Text("Exporter la sauvegarde (JSON v1.1.0)"),
+                  subtitle: const Text(
+                    'Comptes, opérations, dettes, tontines et fiducies',
+                  ),
+                  onTap: c.exportBackup,
+                ),
+                const Divider(indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.file_upload_outlined),
+                  title: const Text("Importer une sauvegarde (v1.1.0)"),
+                  subtitle: const Text(
+                    'Restaure vos données depuis un fichier .json ou texte',
+                  ),
+                  onTap: () => c.importBackup(context),
+                ),
+                const Divider(indent: 16, endIndent: 16),
                 ListTile(
                   leading: const Icon(Icons.ios_share_outlined),
                   title: const Text("Exporter l'historique (CSV)"),
@@ -193,7 +368,7 @@ class SettingsView extends GetView<SettingsController> {
                   leading: Icon(Icons.info_outline),
                   title: Text('Version'),
                   trailing: Text(
-                    '1.0.0',
+                    '1.1.0',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
