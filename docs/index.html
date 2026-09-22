@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartFin — Gestion Financière Personnelle Intelligente (FCFA)</title>
+  <meta name="description" content="Application mobile de gestion financière personnelle en FCFA, 100% hors-ligne. Ventilation des revenus, sanctuarisation des fonds tiers, dettes et achats planifiés.">
+  <meta name="theme-color" content="#059669">
+
+  <!-- Open Graph / Meta réseaux sociaux -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SmartFin — Maîtrisez vos finances personnelles en FCFA">
+  <meta property="og:description" content="L'application mobile intelligente, 100% hors-ligne et éthique : ventilation des encaissements, étanchéité de l'argent confié, cagnottes et dettes.">
+  <meta property="og:image" content="assets/logo.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+
+  <!-- Google Fonts : Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #070b13;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-emerald: rgba(16, 185, 129, 0.3);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.35);
+      --amber: #f59e0b;
+      --purple: #8b5cf6;
+      --blue: #3b82f6;
+      --rose: #f43f5e;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 65%, rgba(139, 92, 246, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* Utilitaires */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    .badge-primary {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--border-emerald);
+      color: #34d399;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(7, 11, 19, 0.8);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+
+    .navbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .nav-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    @media (min-width: 768px) {
+      .nav-links {
+        display: flex;
+      }
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+    }
+
+    /* Boutons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 0.8rem 1.6rem;
+      border-radius: 0.875rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 8px 24px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border);
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .btn-sm {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.85rem;
+      border-radius: 0.65rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 4.5rem 0 3rem;
+      position: relative;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3.5rem;
+      align-items: center;
+    }
+
+    @media (min-width: 992px) {
+      .hero-grid {
+        grid-template-columns: 1.15fr 0.85fr;
+      }
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .hero-title {
+      font-size: 2.75rem;
+      line-height: 1.15;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    @media (min-width: 768px) {
+      .hero-title {
+        font-size: 3.6rem;
+      }
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      max-width: 580px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .hero-features-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin-top: 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .hero-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .hero-feature-item svg {
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    /* Phone Mockup */
+    .mockup-container {
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 340px;
+      height: 680px;
+      background: #090e17;
+      border-radius: 46px;
+      border: 8px solid #1e293b;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.9),
+        0 0 50px -10px var(--primary-glow);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 22px;
+      background: #1e293b;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      z-index: 30;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .phone-camera {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #070b13;
+    }
+
+    .app-screen {
+      flex: 1;
+      padding: 2.2rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      overflow-y: hidden;
+      background: #060a12;
+      font-size: 0.85rem;
+    }
+
+    .mock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+
+    .mock-user {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .mock-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.8rem;
+    }
+
+    .mock-networth {
+      background: linear-gradient(145deg, #064e3b 0%, #065f46 100%);
+      border-radius: 18px;
+      padding: 1.1rem;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 10px 25px -5px rgba(6, 78, 59, 0.4);
+    }
+
+    .mock-daily {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 14px;
+      padding: 0.7rem 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mock-accounts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .mock-acc {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 0.7rem;
+    }
+
+    .mock-tx-list {
+      background: #0d131f;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .mock-tx {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+    }
+
+    .mock-nav {
+      height: 52px;
+      background: #0b101b;
+      border-top: 1px solid #1f2937;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      font-size: 0.65rem;
+      color: #64748b;
+    }
+
+    .mock-nav-item.active {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    /* Floating badges on mockup */
+    .float-pill {
+      position: absolute;
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border-emerald);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border-radius: 14px;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      backdrop-filter: blur(12px);
+      z-index: 20;
+      animation: float 4s ease-in-out infinite alternate;
+    }
+
+    .float-pill-1 {
+      top: 18%;
+      left: -20px;
+    }
+
+    .float-pill-2 {
+      bottom: 22%;
+      right: -25px;
+      animation-delay: -2s;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-8px); }
+    }
+
+    /* Metrics Section */
+    .metrics {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 24, 39, 0.3);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .metrics-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+
+    /* Section Styles */
+    .section {
+      padding: 6rem 0;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 4rem;
+    }
+
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0.75rem 0 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .section-title {
+        font-size: 2.75rem;
+      }
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    /* Pillars Cards */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .pillars-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .pillars-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .pillar-card {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .pillar-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .pillar-icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .pillar-icon-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .pillar-icon-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+    .pillar-icon-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .pillar-icon-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .pillar-icon-teal { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+
+    .pillar-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .pillar-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Interactive Showcase Tabs */
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.7rem 1.4rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: rgba(17, 24, 39, 0.6);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    @media (min-width: 992px) {
+      .tab-content.active {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+    }
+
+    .tab-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .tab-preview-box {
+      background: #090e17;
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
+    }
+
+    /* Download Box Section */
+    .download-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(17, 24, 39, 0.9) 100%);
+      border: 1px solid var(--border-emerald);
+      border-radius: 2rem;
+      padding: 3.5rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .download-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .download-content {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    /* FAQ Accordion */
+    .faq-grid {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .faq-question {
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 250px;
+      padding: 0 1.5rem 1.25rem;
+    }
+
+    .faq-item.open .faq-icon {
+      transform: rotate(180deg);
+    }
+
+    .faq-icon {
+      transition: transform 0.25s ease;
+      color: var(--primary);
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 4rem 0 2rem;
+      background: rgba(5, 8, 15, 0.95);
+      margin-top: 4rem;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (min-width: 768px) {
+      .footer-grid {
+        grid-template-columns: 2fr 1fr 1fr;
+      }
+    }
+
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .footer-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .footer-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--primary);
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    @media (min-width: 768px) {
+      .footer-bottom {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="#" class="nav-brand">
+        <img src="assets/logo.png" alt="SmartFin Logo" class="nav-logo">
+        <div>
+          <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em;">Smart<span style="color: var(--primary);">Fin</span></span>
+          <span style="font-size: 0.65rem; display: block; color: var(--text-dim); line-height: 1;">SamaFi Mobile</span>
+        </div>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#piliers" class="nav-link">Les 6 Piliers</a></li>
+        <li><a href="#fonctionnalites" class="nav-link">Fonctionnalités</a></li>
+        <li><a href="#pourquoi" class="nav-link">Pourquoi SmartFin</a></li>
+        <li><a href="#faq" class="nav-link">FAQ</a></li>
+      </ul>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <a href="https://github.com/baguidevos/smart_fin" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Voir le dépôt GitHub">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span style="display: none; @media(min-width: 640px) { display: inline; }">GitHub</span>
+        </a>
+
+        <a href="https://github.com/baguidevos/smart_fin/releases/download/v1.1.2/SmartFin-v1.1.2.apk" class="btn btn-primary btn-sm">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Télécharger APK</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div>
+          <span class="badge badge-primary">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+            Version 1.1.2 disponible · 100% Hors-ligne
+          </span>
+        </div>
+
+        <h1 class="hero-title">
+          Maîtrisez chaque franc en <span class="hero-gradient">toute sérénité</span>.
+        </h1>
+
+        <p class="hero-desc">
+          <strong>SmartFin</strong> (SamaFi Mobile) est l'application personnelle conçue pour la réalité financière en FCFA : ventilation stricte des revenus, étanchéité absolue de l'argent d'autrui (fiducie), gestion des dettes et cagnottes d'achats. 
+          <strong>Sans serveur, sans compte, et sans jamais toucher à votre vie privée.</strong>
+        </p>
+
+        <div class="hero-actions">
+          <a href="https://github.com/baguidevos/smart_fin/releases/download/v1.1.2/SmartFin-v1.1.2.apk" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.95rem 1.8rem;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993 0 .5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.996-3.4572c.1583-.2742.0645-.6242-.2097-.7825-.2742-.1583-.6242-.0645-.7825.2097l-2.0238 3.5055c-1.4678-.6692-3.1118-1.0422-4.8615-1.0422-1.7497 0-3.3937.373-4.8615 1.0422L5.1147 5.2914c-.1583-.2742-.5083-.368-.7825-.2097-.2742.1583-.368.5083-.2097.7825l1.996 3.4572C2.6865 11.3986.345 15.2285 0 19.8242h24c-.345-4.5957-2.6865-8.4256-6.1185-10.5028"/>
+            </svg>
+            <span>Télécharger l'APK v1.1.2</span>
+          </a>
+
+          <a href="https://github.com/baguidevos/smart_fin" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+            <span>Code Source (GitHub)</span>
+          </a>
+        </div>
+
+        <div class="hero-features-list">
+          <div class="hero-feature-item">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Devise FCFA</span>
+          </div>
+          <div class="hero-feature-item">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>100% Hors-ligne</span>
+          </div>
+          <div class="hero-feature-item">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Zéro inscription</span>
+          </div>
+          <div class="hero-feature-item">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Sauvegardes .json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smartphone Preview Mockup -->
+      <div class="mockup-container">
+        <!-- Floating Pills -->
+        <div class="float-pill float-pill-1">
+          <div style="background: rgba(16, 185, 129, 0.2); color: #10b981; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            ✓
+          </div>
+          <div>
+            <div style="font-size: 0.7rem; color: var(--text-dim);">Revenu ventilé</div>
+            <div style="color: #34d399;">+250 000 FCFA</div>
+          </div>
+        </div>
+
+        <div class="float-pill float-pill-2">
+          <div style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            🛡️
+          </div>
+          <div>
+            <div style="font-size: 0.7rem; color: var(--text-dim);">Fiducie étanche</div>
+            <div style="color: #fbbf24;">Argent tiers isolé</div>
+          </div>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-notch">
+            <div class="phone-camera"></div>
+          </div>
+
+          <div class="app-screen">
+            <!-- Mock Header -->
+            <div class="mock-header">
+              <div class="mock-user">
+                <div class="mock-avatar">M</div>
+                <div>
+                  <div style="font-weight: 800; font-size: 0.85rem; color: #fff;">Mamadou Sow</div>
+                  <div style="font-size: 0.65rem; color: #64748b;">Dakar · Hors-ligne</div>
+                </div>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 8px; font-size: 0.65rem; color: #10b981; font-weight: 700;">
+                ● Actif
+              </div>
+            </div>
+
+            <!-- Net Worth Card -->
+            <div class="mock-networth">
+              <div style="font-size: 0.7rem; color: #a7f3d0; font-weight: 600;">PATRIMOINE NET</div>
+              <div style="font-size: 1.55rem; font-weight: 800; color: #fff; margin: 2px 0 6px;">1 450 000 FCFA</div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.65rem; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 6px;">
+                <span style="color: #d1fae5;">Actif dispo : 1 650 000 FCFA</span>
+                <span style="color: #fca5a5;">Dette : 200 000 FCFA</span>
+              </div>
+            </div>
+
+            <!-- Daily Allowance -->
+            <div class="mock-daily">
+              <div>
+                <div style="font-size: 0.65rem; color: #f59e0b; font-weight: 700;">ARGENT DU JOUR</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #fff;">8 500 FCFA <span style="font-size: 0.65rem; color: #94a3b8; font-weight: normal;">/ jour</span></div>
+              </div>
+              <div style="font-size: 0.65rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 6px;">
+                Reste 19 j
+              </div>
+            </div>
+
+            <!-- Accounts Snapshot -->
+            <div style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; margin-top: 2px;">COMPTES PRINCIPAUX</div>
+            <div class="mock-accounts-grid">
+              <div class="mock-acc">
+                <div style="font-size: 0.65rem; color: #10b981; font-weight: 700;">👛 Caisse Wave</div>
+                <div style="font-weight: 800; font-size: 0.85rem; color: #fff; margin-top: 2px;">150 000 F</div>
+              </div>
+              <div class="mock-acc">
+                <div style="font-size: 0.65rem; color: #f59e0b; font-weight: 700;">🧾 Charges fixes</div>
+                <div style="font-weight: 800; font-size: 0.85rem; color: #fff; margin-top: 2px;">60 000 F</div>
+              </div>
+              <div class="mock-acc">
+                <div style="font-size: 0.65rem; color: #3b82f6; font-weight: 700;">🏦 Épargne sécu</div>
+                <div style="font-weight: 800; font-size: 0.85rem; color: #fff; margin-top: 2px;">800 000 F</div>
+              </div>
+              <div class="mock-acc">
+                <div style="font-size: 0.65rem; color: #f43f5e; font-weight: 700;">🤝 Fiducie Mamie</div>
+                <div style="font-weight: 800; font-size: 0.85rem; color: #fff; margin-top: 2px;">250 000 F</div>
+              </div>
+            </div>
+
+            <!-- Recent Ops -->
+            <div style="font-size: 0.7rem; font-weight: 700; color: #94a3b8;">DERNIÈRES OPÉRATIONS</div>
+            <div class="mock-tx-list">
+              <div class="mock-tx">
+                <div>
+                  <div style="color: #fff; font-weight: 600;">Marché Sandaga</div>
+                  <div style="color: #64748b; font-size: 0.65rem;">Caisse Wave · Alimentation</div>
+                </div>
+                <div style="color: #f43f5e; font-weight: 700;">-18 000 F</div>
+              </div>
+              <div class="mock-tx">
+                <div>
+                  <div style="color: #fff; font-weight: 600;">Salaire ventilé</div>
+                  <div style="color: #64748b; font-size: 0.65rem;">Ventilation sur 4 comptes</div>
+                </div>
+                <div style="color: #10b981; font-weight: 700;">+250 000 F</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Mock -->
+          <div class="mock-nav">
+            <div class="mock-nav-item active">Accueil</div>
+            <div class="mock-nav-item">Comptes</div>
+            <div class="mock-nav-item" style="background: #10b981; color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">+</div>
+            <div class="mock-nav-item">Historique</div>
+            <div class="mock-nav-item">Plus</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Metrics Bar -->
+  <section class="metrics">
+    <div class="container metrics-grid">
+      <div class="metric-item">
+        <div class="metric-value">100%</div>
+        <div class="metric-label">Hors-ligne & Sans Cloud</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-value">0 FCFA</div>
+        <div class="metric-label">Gratuit & Sans Publicité</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-value">7</div>
+        <div class="metric-label">Types de comptes étanches</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-value">0</div>
+        <div class="metric-label">Donnée collectée ou vendue</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Les 6 Piliers (Objectif de l'app) -->
+  <section id="piliers" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-primary">Philosophie & Rigueur</span>
+        <h2 class="section-title">Les 6 piliers d'une vraie paix financière</h2>
+        <p class="section-desc">
+          SmartFin n'est pas un simple carnet de dépenses : c'est un cadre comptable protecteur pensé pour les réalités du quotidien.
+        </p>
+      </div>
+
+      <div class="pillars-grid">
+        <!-- Pilier 1 -->
+        <div class="glass-card pillar-card">
+          <div class="pillar-icon-box pillar-icon-emerald">📥</div>
+          <h3 class="pillar-title">Ventilation Obligatoire</h3>
+          <p class="pillar-desc">
+            Fini l'argent qui s'évapore sans qu'on sache où il est passé. Chaque rentrée d'argent est <strong>intégralement ventilée</strong> à la saisie (charges fixes, enveloppes, épargne, projets). Chaque franc a une mission assignée.
+          </p>
+        </div>
+
+        <!-- Pilier 2 -->
+        <div class="glass-card pillar-card">
+          <div class="pillar-icon-box pillar-icon-amber">🛡️</div>
+          <h3 class="pillar-title">Fiducie & Argent Confié</h3>
+          <p class="pillar-desc">
+            Un proche vous confie de l'argent ? SmartFin sanctuarise les fonds tiers. En cas de besoin urgent d'y toucher, un <strong>détournement d'usage est tracé</strong> avec création automatique d'une créance interne jusqu'à son reversement.
+          </p>
+        </div>
+
+        <!-- Pilier 3 -->
+        <div class="glass-card pillar-card">
+          <div class="pillar-icon-box pillar-icon-rose">🧾</div>
+          <h3 class="pillar-title">Dettes & Emprunts Rigs</h3>
+          <p class="pillar-desc">
+            <strong>Un emprunt n'est pas un revenu</strong> : il n'augmente que votre passif exigible sans fausser vos revenus du mois. Les remboursements sont plafonnés au reste dû avec une traçabilité totale.
+          </p>
+        </div>
+
+        <!-- Pilier 4 -->
+        <div class="glass-card pillar-card">
+          <div class="pillar-icon-box pillar-icon-purple">🛍️</div>
+          <h3 class="pillar-title">Achats Planifiés & Cagnottes</h3>
+          <p class="pillar-desc">
+            Constituez des cagnottes dédiées pour vos projets (téléphone, fête, projet). Le prix en magasin a changé ? <strong>Modifiez le prix cible</strong> en direct. Vous renoncez ? L'argent est réinjecté dans votre épargne en un clic.
+          </p>
+        </div>
+
+        <!-- Pilier 5 -->
+        <div class="glass-card pillar-card">
+          <div class="pillar-icon-box pillar-icon-blue">👥</div>
+          <h3 class="pillar-title">Tontines Transparentes</h3>
+          <p class="pillar-desc">
+            Suivi des tours de table, cotisations régulières, calcul automatique du pot remporté et mise à jour des encours récupérables pour une sérénité collective totale.
+          </p>
+        </div>
+
+        <!-- Pilier 6 -->
+        <div class="glass-card pillar-card">
+          <div class="pillar-icon-box pillar-icon-teal">✏️</div>
+          <h3 class="pillar-title">Ajustements en Direct (v1.1.2)</h3>
+          <p class="pillar-desc">
+            Une faute de frappe lors d'une course ? Vous pouvez <strong>modifier le montant de toute dépense, encaissement ou virement</strong>. SmartFin rééquilibre automatiquement les soldes des comptes dans le respect des règles comptables.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Features Section -->
+  <section id="fonctionnalites" class="section" style="background: rgba(11, 16, 27, 0.5);">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-primary">Visite Guidée</span>
+        <h2 class="section-title">Une interface épurée, une puissance invisible</h2>
+        <p class="section-desc">
+          Conçu avec Flutter et Material 3 pour une expérience tactile fluide et instantanée.
+        </p>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-ventilation')">📥 Ventilation des Revenus</button>
+        <button class="tab-btn" onclick="switchTab('tab-fiducie')">🤝 Argent Confié (Fiducie)</button>
+        <button class="tab-btn" onclick="switchTab('tab-cagnottes')">🎯 Cagnottes d'Achat</button>
+        <button class="tab-btn" onclick="switchTab('tab-sauvegarde')">💾 Sauvegardes .json</button>
+      </div>
+
+      <!-- Tab 1: Ventilation -->
+      <div id="tab-ventilation" class="tab-content active">
+        <div class="tab-text">
+          <span style="color: #34d399; font-weight: 700; font-size: 0.9rem;">RÈGLE N°1 DE SMARTFIN</span>
+          <h3 style="font-size: 1.85rem; color: #fff;">Chaque rentrée d'argent est immédiatement orientée</h3>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.7;">
+            Lorsque vous recevez un salaire de 300 000 FCFA, SmartFin vous demande de le ventiler immédiatement : 100 000 FCFA pour le loyer (charges fixes), 80 000 FCFA pour les courses, 40 000 FCFA pour la caisse Wave et 80 000 FCFA en épargne.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--primary);">✓</span> Reste à ventiler calculé en temps réel (zéro franc orphelin)
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--primary);">✓</span> Bouton « Tout allouer » pour verser le reliquat d'un seul geste
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--primary);">✓</span> Possibilité d'ajuster le montant encaissé ultérieurement
+            </li>
+          </ul>
+        </div>
+        <div class="tab-preview-box">
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; font-weight: 700;">Simulation de ventilation</div>
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--border-emerald); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; color: #fff;">
+              <span>Salaire mensuel</span>
+              <span style="color: #34d399;">300 000 FCFA</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #10b981; margin-top: 4px;">Ventilation intégrale équilibrée (0 FCFA restant)</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; background: #111827; border-radius: 8px;">
+              <span>🏢 Charges fixes (Loyer & Factures)</span>
+              <span style="font-weight: 700; color: #f59e0b;">120 000 FCFA</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; background: #111827; border-radius: 8px;">
+              <span>🛒 Enveloppe Courses & Nourriture</span>
+              <span style="font-weight: 700; color: #fbbf24;">80 000 FCFA</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; background: #111827; border-radius: 8px;">
+              <span>👛 Caisse Wave (Argent poche)</span>
+              <span style="font-weight: 700; color: #34d399;">50 000 FCFA</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; background: #111827; border-radius: 8px;">
+              <span>🏦 Épargne de précaution</span>
+              <span style="font-weight: 700; color: #60a5fa;">50 000 FCFA</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Fiducie -->
+      <div id="tab-fiducie" class="tab-content">
+        <div class="tab-text">
+          <span style="color: #f59e0b; font-weight: 700; font-size: 0.9rem;">L'ARGENT D'AUTRUI EST SACRÉ</span>
+          <h3 style="font-size: 1.85rem; color: #fff;">Étanchéité des fonds confiés par vos proches</h3>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.7;">
+            Votre oncle vous laisse 150 000 FCFA pour acheter du ciment ? Cet argent n'est pas à vous et ne doit pas gonfler votre pouvoir d'achat quotidien.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--amber);">✓</span> Dépense objet : payez directement pour l'objectif convenu
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--amber);">✓</span> Détournement d'usage assumé : empruntez temporairement avec création d'une créance claire
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--amber);">✓</span> Clôture définitive uniquement lorsque le compte et les créances sont remis à zéro
+            </li>
+          </ul>
+        </div>
+        <div class="tab-preview-box">
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; font-weight: 700;">Fiche de fonds tiers</div>
+          <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; color: #fff;">
+              <span>Fonds Tante Awa</span>
+              <span style="color: #f59e0b;">150 000 FCFA</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #fbbf24; margin-top: 4px;">Objet convenu : Achat carrelage maison</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; background: #111827; border-radius: 8px;">
+              <span>Disponible sous garde</span>
+              <span style="font-weight: 700; color: #fff;">120 000 FCFA</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; background: #111827; border-radius: 8px;">
+              <span>Créance envers Tante Awa</span>
+              <span style="font-weight: 700; color: #f43f5e;">30 000 FCFA (à reverser)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Cagnottes -->
+      <div id="tab-cagnottes" class="tab-content">
+        <div class="tab-text">
+          <span style="color: #8b5cf6; font-weight: 700; font-size: 0.9rem;">ACHATS INTELLIGENTS</span>
+          <h3 style="font-size: 1.85rem; color: #fff;">Préparez vos achats sans toucher à vos réserves</h3>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.7;">
+            Vous voulez acheter un smartphone à 180 000 FCFA ? Créez une cagnotte, cotisez pas à pas et ajustez le prix cible en toute souplesse si le tarif en boutique a évolué.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--purple);">✓</span> Modification directe du prix, du titre et de la date d'échéance
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--purple);">✓</span> Recalcul dynamique de la jauge et du reste à cotiser
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: var(--purple);">✓</span> Redirection assumée : reversez toute la cagnotte sur votre épargne si vous changez d'avis
+            </li>
+          </ul>
+        </div>
+        <div class="tab-preview-box">
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; font-weight: 700;">Cagnotte en cours</div>
+          <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; color: #fff;">
+              <span>Smartphone Samsung</span>
+              <span style="color: #a78bfa;">180 000 FCFA</span>
+            </div>
+            <div style="margin-top: 8px; width: 100%; height: 8px; background: #1e293b; border-radius: 999px; overflow: hidden;">
+              <div style="width: 65%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #10b981);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #cbd5e1; margin-top: 6px;">
+              <span>Cotisé : 117 000 F (65%)</span>
+              <span style="color: #f59e0b;">Reste : 63 000 F</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Sauvegarde -->
+      <div id="tab-sauvegarde" class="tab-content">
+        <div class="tab-text">
+          <span style="color: #38bdf8; font-weight: 700; font-size: 0.9rem;">SOUVERAINETÉ DES DONNÉES (v1.1.2)</span>
+          <h3 style="font-size: 1.85rem; color: #fff;">Exportation & Importation native en fichier .json</h3>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.7;">
+            Vos données financières vous appartiennent à 100%. Exportez à tout moment l'intégralité de vos comptes, opérations et cagnottes sous la forme d'un vrai fichier <code>.json</code> universel.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: #38bdf8;">✓</span> Exportation native d'un fichier .json physique horodaté (pas de faux fichier .txt)
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: #38bdf8;">✓</span> Restauration immédiate dès le premier démarrage ou dans les paramètres
+            </li>
+            <li style="display: flex; align-items: center; gap: 0.6rem; color: #cbd5e1;">
+              <span style="color: #38bdf8;">✓</span> Préservation intégrale de la piste d'audit et de l'historique
+            </li>
+          </ul>
+        </div>
+        <div class="tab-preview-box">
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; font-weight: 700;">Format de sauvegarde SmartFin</div>
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 1rem; font-family: monospace; font-size: 0.8rem; color: #38bdf8;">
+            {<br>
+            &nbsp;&nbsp;"version": "1.1.0",<br>
+            &nbsp;&nbsp;"appName": "SmartFin",<br>
+            &nbsp;&nbsp;"exportedAt": "2026-09-22T...",<br>
+            &nbsp;&nbsp;"data": {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"accounts": [...],<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;"transactions": [...]<br>
+            &nbsp;&nbsp;}<br>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pourquoi SmartFin vs Autres -->
+  <section id="pourquoi" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-primary">Pourquoi Choisir SmartFin</span>
+        <h2 class="section-title">Une philosophie radicalement différente</h2>
+        <p class="section-desc">
+          Comparez la vision SmartFin avec les applications de gestion classiques.
+        </p>
+      </div>
+
+      <div class="glass-card" style="overflow-x: auto; padding: 1rem;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 600px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: #fff;">
+              <th style="padding: 1.25rem 1rem;">Critères</th>
+              <th style="padding: 1.25rem 1rem; color: #94a3b8;">Applications classiques</th>
+              <th style="padding: 1.25rem 1rem; color: #34d399; font-size: 1.1rem;">SmartFin (SamaFi)</th>
+            </tr>
+          </thead>
+          <tbody style="font-size: 0.95rem; color: var(--text-muted);">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 1.25rem 1rem; font-weight: 700; color: #fff;">Connexion & Vie privée</td>
+              <td style="padding: 1.25rem 1rem;">Compte obligatoire, synchronisation cloud, pistage</td>
+              <td style="padding: 1.25rem 1rem; color: #34d399; font-weight: 700;">100% Hors-ligne, zéro serveur, aucune donnée stockée en ligne</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 1.25rem 1rem; font-weight: 700; color: #fff;">Arrivée d'un revenu</td>
+              <td style="padding: 1.25rem 1rem;">S'ajoute au solde global (illusion de richesse)</td>
+              <td style="padding: 1.25rem 1rem; color: #34d399; font-weight: 700;">Ventilation obligatoire sur vos comptes avant de dépenser</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 1.25rem 1rem; font-weight: 700; color: #fff;">Argent confié par autrui</td>
+              <td style="padding: 1.25rem 1rem;">Mélangé à votre propre solde bancaire</td>
+              <td style="padding: 1.25rem 1rem; color: #34d399; font-weight: 700;">Fiducie étanche : traçabilité stricte et gestion des créances</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 1.25rem 1rem; font-weight: 700; color: #fff;">Dettes & Emprunts</td>
+              <td style="padding: 1.25rem 1rem;">Considérés comme un "revenu"</td>
+              <td style="padding: 1.25rem 1rem; color: #34d399; font-weight: 700;">Reconnu comme un passif exigible sans fausser vos revenus réels</td>
+            </tr>
+            <tr>
+              <td style="padding: 1.25rem 1rem; font-weight: 700; color: #fff;">Modèle économique</td>
+              <td style="padding: 1.25rem 1rem;">Abonnements mensuels coûteux ou publicités intrusives</td>
+              <td style="padding: 1.25rem 1rem; color: #34d399; font-weight: 700;">Open-source, libre et gratuit pour toujours</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Section -->
+  <section id="telecharger" class="section">
+    <div class="container">
+      <div class="download-card">
+        <div class="download-content">
+          <span class="badge badge-primary">Release Officielle v1.1.2</span>
+          
+          <h2 style="font-size: 2.5rem; color: #fff; line-height: 1.2;">
+            Prenez le contrôle de vos finances dès aujourd'hui
+          </h2>
+          
+          <p style="color: var(--text-muted); font-size: 1.1rem;">
+            Téléchargez le fichier APK directement depuis GitHub Releases. Compatible avec tous les smartphones Android (version 8.0 et ultérieure).
+          </p>
+
+          <div style="display: flex; flex-direction: column; sm-direction: row; gap: 1rem; width: 100%; justify-content: center; align-items: center;">
+            <a href="https://github.com/baguidevos/smart_fin/releases/download/v1.1.2/SmartFin-v1.1.2.apk" class="btn btn-primary" style="font-size: 1.15rem; padding: 1.1rem 2.2rem; width: 100%; max-width: 380px;">
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              <span>Télécharger SmartFin-v1.1.2.apk</span>
+            </a>
+
+            <a href="https://github.com/baguidevos/smart_fin/releases" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="font-size: 0.95rem;">
+              Voir toutes les versions sur GitHub
+            </a>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; font-size: 0.8125rem; color: var(--text-dim); margin-top: 1rem;">
+            <span>📦 Fichier : SmartFin-v1.1.2.apk</span>
+            <span>📱 Requis : Android 8.0+</span>
+            <span>⚖️ Licence : Open-source</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-primary">Questions Fréquentes</span>
+        <h2 class="section-title">Tout ce que vous devez savoir</h2>
+        <p class="section-desc">Des réponses claires et sans jargon sur l'utilisation de SmartFin.</p>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Pourquoi l'application utilise-t-elle exclusivement le FCFA ?</span>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-answer">
+            SmartFin est spécifiquement calibrée pour la zone franc CFA (Afrique de l'Ouest et Centrale). Les arrondis, les plafonds de dépenses courantes et le vocabulaire correspondent exactement au quotidien économique local.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Mes données bancaires ou personnelles peuvent-elles être piratées ?</span>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-answer">
+            Non. SmartFin fonctionne à <strong>100% hors-ligne</strong>. L'application ne possède aucun serveur distant et ne se connecte à aucun service tiers. Vos données restent physiquement dans la mémoire sécurisée de votre téléphone.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Comment transférer mes données si je change de téléphone ?</span>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-answer">
+            Allez dans les <strong>Paramètres → Exporter la sauvegarde (JSON)</strong>. L'application génère un fichier <code>.json</code> complet que vous pouvez envoyer par Bluetooth, WhatsApp ou enregistrer sur une clé. Sur votre nouvel appareil, sélectionnez simplement ce fichier lors de l'ouverture !
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Puis-je corriger une dépense ou un virement en cas d'erreur de saisie ?</span>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-answer">
+            Oui ! Depuis la version 1.1.2, appuyez sur n'importe quelle opération dans votre onglet <strong>Historique</strong> puis sélectionnez <strong>« Modifier le montant »</strong>. SmartFin recalculera automatiquement et immédiatement le solde du compte payeur ou bénéficiaire.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Comment installer le fichier APK sur mon téléphone Android ?</span>
+            <span class="faq-icon">▼</span>
+          </div>
+          <div class="faq-answer">
+            1. Téléchargez le fichier APK depuis le bouton de cette page.<br>
+            2. Ouvrez le fichier téléchargé depuis vos notifications ou votre gestionnaire de fichiers.<br>
+            3. Si votre navigateur demande l'autorisation d'installer des applications inconnues, activez l'option dans les paramètres Android. C'est tout !
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <img src="assets/logo.png" alt="SmartFin Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+            <span style="font-weight: 800; font-size: 1.2rem;">Smart<span style="color: var(--primary);">Fin</span></span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 360px;">
+            Application mobile de gestion financière personnelle en FCFA. Développée avec passion par DevOs pour promouvoir l'autonomie et la souveraineté financière en Afrique.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-title">Ressources</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/baguidevos/smart_fin/blob/main/GUIDE_UTILISATEUR.md" target="_blank" rel="noopener noreferrer" class="footer-link">Guide Utilisateur</a></li>
+            <li><a href="https://github.com/baguidevos/smart_fin/blob/main/DOCUMENTATION.md" target="_blank" rel="noopener noreferrer" class="footer-link">Documentation Métier</a></li>
+            <li><a href="https://github.com/baguidevos/smart_fin/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="footer-link">Journal des Versions</a></li>
+            <li><a href="https://github.com/baguidevos/smart_fin/releases" target="_blank" rel="noopener noreferrer" class="footer-link">Releases GitHub</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-title">Communauté</h4>
+          <ul class="footer-links">
+            <li><a href="https://github.com/baguidevos/smart_fin" target="_blank" rel="noopener noreferrer" class="footer-link">Projet GitHub</a></li>
+            <li><a href="https://github.com/baguidevos/smart_fin/issues" target="_blank" rel="noopener noreferrer" class="footer-link">Signaler un bug</a></li>
+            <li><a href="https://github.com/baguidevos/smart_fin/pulls" target="_blank" rel="noopener noreferrer" class="footer-link">Contribuer au code</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 SmartFin (SamaFi Mobile) — Développé par DevOs. Tous droits réservés.
+        </div>
+        <div>
+          Conçu avec Flutter & Material 3 · 100% Open Source
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) {
+        targetContent.classList.add('active');
+      }
+      
+      // Update active state on button
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) {
+        clickedBtn.classList.add('active');
+      }
+    }
+
+    // FAQ Accordion
+    function toggleFaq(element) {
+      const item = element.parentElement;
+      const isOpen = item.classList.contains('open');
+      
+      // Close all items
+      document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'));
+      
+      // Toggle clicked item
+      if (!isOpen) {
+        item.classList.add('open');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,7 +1,14 @@
-# SamaFi Mobile 📱💰
+# SamaFi Mobile (SmartFin) 📱💰
 
-**Version mobile Flutter de SamaFi** — gestion financière personnelle intelligente
+[![Release](https://img.shields.io/github/v/release/baguidevos/smart_fin?label=APK%20Release&color=10b981)](https://github.com/baguidevos/smart_fin/releases/latest)
+[![Website](https://img.shields.io/badge/Site%20Web-SmartFin-059669)](https://baguidevos.github.io/smart_fin/)
+[![License](https://img.shields.io/badge/Licence-Open%20Source-blue)](#)
+
+**Version mobile Flutter de SamaFi (SmartFin)** — gestion financière personnelle intelligente
 (devise **FCFA**, interface 100 % française, 100 % hors-ligne).
+
+🌐 **Site officiel & Présentation** : [https://baguidevos.github.io/smart_fin/](https://baguidevos.github.io/smart_fin/)  
+📲 **Télécharger l'APK directement** : [SmartFin-v1.1.2.apk](https://github.com/baguidevos/smart_fin/releases/download/v1.1.2/SmartFin-v1.1.2.apk)
 
 > Gestion de routes, d'état et d'injection de dépendances : **GetX**.
 
