@@ -412,12 +412,216 @@ Future<void> showTxDetails(BuildContext context, Transaction tx) {
                 ),
               ),
             ),
+            if (tx.type == TxType.expense ||
+                tx.type == TxType.income ||
+                tx.type == TxType.transfer) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    showEditTransactionAmountSheet(context, tx);
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Modifier le montant'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     ),
   );
 }
+
+/// Bottom sheet universelle permettant de modifier le montant d'une opération
+/// enregistrée (dépense, encaissement ou virement interne).
+Future<void> showEditTransactionAmountSheet(
+    BuildContext context, Transaction tx) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (_) => _EditTransactionAmountSheet(tx: tx),
+  );
+}
+
+class _EditTransactionAmountSheet extends StatefulWidget {
+  final Transaction tx;
+
+  const _EditTransactionAmountSheet({required this.tx});
+
+  @override
+  State<_EditTransactionAmountSheet> createState() =>
+      _EditTransactionAmountSheetState();
+}
+
+class _EditTransactionAmountSheetState
+    extends State<_EditTransactionAmountSheet> {
+  late final TextEditingController _amountCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl = TextEditingController(text: widget.tx.amount.toString());
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tx = widget.tx;
+    final repo = Get.find<FinanceRepository>();
+    final cs = Theme.of(context).colorScheme;
+
+    String title;
+    String amountLabel;
+    String accountInfo = '';
+    Color iconColor = cs.primary;
+
+    switch (tx.type) {
+      case TxType.expense:
+        title = 'Modifier le montant de la dépense';
+        amountLabel = 'Nouveau montant dépensé';
+        iconColor = Colors.red.shade700;
+        final account = repo.accountById(tx.fromAccountId ?? tx.accountId);
+        if (account != null) {
+          accountInfo =
+              'Compte payeur : ${account.name} · Solde : ${fcfa(account.balance)}';
+        }
+        break;
+      case TxType.income:
+        title = "Modifier le montant de l'encaissement";
+        amountLabel = 'Nouveau montant encaissé';
+        iconColor = Colors.green.shade700;
+        final account = repo.accountById(tx.toAccountId ?? tx.accountId);
+        if (account != null) {
+          accountInfo =
+              'Compte bénéficiaire : ${account.name} · Solde : ${fcfa(account.balance)}';
+        }
+        break;
+      case TxType.transfer:
+        title = 'Modifier le montant du virement';
+        amountLabel = 'Nouveau montant transféré';
+        iconColor = cs.primary;
+        final from = repo.accountById(tx.fromAccountId ?? tx.accountId);
+        final to = repo.accountById(tx.toAccountId);
+        if (from != null && to != null) {
+          accountInfo =
+              'De « ${from.name} » (${fcfa(from.balance)}) → Vers « ${to.name} » (${fcfa(to.balance)})';
+        }
+        break;
+      default:
+        title = "Modifier le montant de l'opération";
+        amountLabel = 'Nouveau montant';
+        break;
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.edit_outlined, size: 18, color: iconColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Opération : « ${tx.label} »',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (accountInfo.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  accountInfo,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              AmountField(
+                controller: _amountCtrl,
+                label: amountLabel,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final newAmount = parseAmount(_amountCtrl.text) ?? 0;
+                    if (newAmount <= 0) {
+                      errorSnack(AppException(
+                          'Le montant doit être supérieur à 0 FCFA.'));
+                      return;
+                    }
+                    if (newAmount == tx.amount) {
+                      Navigator.of(context).pop();
+                      return;
+                    }
+                    try {
+                      repo.updateTransactionAmount(
+                        transactionId: tx.id,
+                        newAmount: newAmount,
+                      );
+                      Navigator.of(context).pop();
+                      successSnack(
+                        'Montant modifié',
+                        '« ${tx.label} » : ${fcfa(newAmount)}',
+                      );
+                    } catch (e) {
+                      errorSnack(e);
+                    }
+                  },
+                  icon: const Icon(Icons.check, size: 19),
+                  label: const Text('Enregistrer le nouveau montant'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Rétrocompatibilité : redirige vers [showEditTransactionAmountSheet].
+Future<void> showEditExpenseAmountSheet(BuildContext context, Transaction tx) =>
+    showEditTransactionAmountSheet(context, tx);
 
 // ---------------------------------------------------------------------------
 // Sélecteur de compte (bottom sheet)
@@ -829,6 +1033,7 @@ class FormScaffold extends StatelessWidget {
   final String submitLabel;
   final VoidCallback onSubmit;
   final IconData submitIcon;
+  final List<Widget>? actions;
 
   const FormScaffold({
     super.key,
@@ -837,12 +1042,16 @@ class FormScaffold extends StatelessWidget {
     required this.submitLabel,
     required this.onSubmit,
     this.submitIcon = Icons.check,
+    this.actions,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        actions: actions,
+      ),
       body: Form(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),

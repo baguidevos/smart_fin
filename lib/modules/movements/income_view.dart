@@ -22,6 +22,10 @@ class _IncomeLine {
 class IncomeController extends GetxController {
   final FinanceRepository repo = Get.find<FinanceRepository>();
 
+  /// Identifiant de l'encaissement en édition (null = création).
+  final String? editId = Get.arguments as String?;
+  bool get isEdit => editId != null;
+
   final totalCtrl = TextEditingController();
   final labelCtrl = TextEditingController();
   final date = Rx<DateTime?>(null);
@@ -38,6 +42,20 @@ class IncomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    if (editId != null) {
+      final tx = repo.transactionById(editId);
+      if (tx != null) {
+        totalCtrl.text = tx.amount.toString();
+        labelCtrl.text = tx.label;
+        date.value = tx.date;
+        final acc = repo.accountById(tx.toAccountId ?? tx.accountId);
+        final line = _IncomeLine()..account = acc;
+        line.amountCtrl.text = tx.amount.toString();
+        lines.add(line);
+        refreshTotals();
+        return;
+      }
+    }
     addLine();
   }
 
@@ -91,11 +109,24 @@ class IncomeController extends GetxController {
 
   void submit() {
     final totalAmount = parseAmount(totalCtrl.text) ?? 0;
-    final label = labelCtrl.text.trim();
     if (totalAmount <= 0) {
       errorSnack(AppException("Saisissez d'abord le montant total encaissé."));
       return;
     }
+
+    if (isEdit) {
+      try {
+        repo.updateIncomeAmount(transactionId: editId!, newAmount: totalAmount);
+        Get.back();
+        successSnack(
+            'Encaissement modifié', 'Nouveau montant : ${fcfa(totalAmount)}');
+      } catch (e) {
+        errorSnack(e);
+      }
+      return;
+    }
+
+    final label = labelCtrl.text.trim();
     if (label.isEmpty) {
       errorSnack(AppException('Le libellé est obligatoire.'));
       return;
@@ -140,87 +171,163 @@ class IncomeView extends GetView<IncomeController> {
     final c = controller;
     final cs = Theme.of(context).colorScheme;
     return FormScaffold(
-      title: 'Nouvel encaissement',
-      submitLabel: 'Encaisser',
-      submitIcon: Icons.south_west,
+      title: c.isEdit ? "Modifier l'encaissement" : 'Nouvel encaissement',
+      submitLabel: c.isEdit ? 'Enregistrer le montant' : 'Encaisser',
+      submitIcon: c.isEdit ? Icons.check : Icons.south_west,
       onSubmit: c.submit,
       children: [
+        if (c.isEdit) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.green.shade700.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.green.shade700.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: Colors.green.shade700,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Modification du montant de « ${c.labelCtrl.text} ». Le solde du compte bénéficiaire sera réajusté automatiquement.",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         AmountField(
           controller: c.totalCtrl,
-          label: 'Montant total encaissé',
+          label: c.isEdit
+              ? 'Nouveau montant encaissé'
+              : 'Montant total encaissé',
           onChanged: (_) => c.refreshTotals(),
         ),
-        LabeledField(
-          label: 'Libellé',
-          child: TextFormField(
-            controller: c.labelCtrl,
-            textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.next,
-            decoration:
-                const InputDecoration(hintText: 'Salaire, prime, vente…'),
-          ),
-        ),
-        Obx(
-          () => DateField(
-            label: "Date de l'encaissement",
-            value: c.date.value,
-            onChanged: (d) => c.date.value = d,
-            allowEmpty: true,
-          ),
-        ),
-        _resteBanner(context),
-        const SizedBox(height: 18),
-        Text(
-          'Ventilation',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: cs.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Répartissez le montant entre vos comptes.',
-          style: TextStyle(
-            fontSize: 11.5,
-            color: cs.onSurfaceVariant.withOpacity(0.8),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Obx(
-          () => Column(
-            children: [
-              for (var i = 0; i < c.lines.length; i++) _lineCard(context, i),
-            ],
-          ),
-        ),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.tonalIcon(
-            onPressed: c.addLine,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Ajouter une destination'),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.tips_and_updates_outlined,
-                size: 16, color: cs.onSurfaceVariant),
-            const SizedBox(width: 8),
-            Expanded(
+        if (c.isEdit &&
+            c.lines.isNotEmpty &&
+            c.lines.first.account != null) ...[
+          LabeledField(
+            label: 'Compte bénéficiaire (non modifiable)',
+            child: InputDecorator(
+              decoration: InputDecoration(
+                prefixIcon: Icon(
+                  Icons.account_balance,
+                  color:
+                      c.lines.first.account?.role.color ?? cs.onSurfaceVariant,
+                ),
+              ),
               child: Text(
-                "Règle d'or : chaque franc encaissé est affecté à un compte (ventilation obligatoire).",
-                style: TextStyle(
-                  fontSize: 11.5,
-                  height: 1.4,
-                  color: cs.onSurfaceVariant,
+                '${c.lines.first.account!.name} · Solde : ${fcfa(c.lines.first.account!.balance)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
                 ),
               ),
             ),
-          ],
+          ),
+        ],
+        IgnorePointer(
+          ignoring: c.isEdit,
+          child: Opacity(
+            opacity: c.isEdit ? 0.6 : 1.0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LabeledField(
+                  label: c.isEdit
+                      ? 'Libellé (non modifiable)'
+                      : 'Libellé',
+                  child: TextFormField(
+                    controller: c.labelCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      hintText: 'Salaire, prime, vente…',
+                    ),
+                  ),
+                ),
+                Obx(
+                  () => DateField(
+                    label: c.isEdit
+                        ? "Date de l'encaissement (non modifiable)"
+                        : "Date de l'encaissement",
+                    value: c.date.value,
+                    onChanged: (d) => c.date.value = d,
+                    allowEmpty: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
+        if (!c.isEdit) ...[
+          _resteBanner(context),
+          const SizedBox(height: 18),
+          Text(
+            'Ventilation',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Répartissez le montant entre vos comptes.',
+            style: TextStyle(
+              fontSize: 11.5,
+              color: cs.onSurfaceVariant.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Obx(
+            () => Column(
+              children: [
+                for (var i = 0; i < c.lines.length; i++) _lineCard(context, i),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              onPressed: c.addLine,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Ajouter une destination'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.tips_and_updates_outlined,
+                  size: 16, color: cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Règle d'or : chaque franc encaissé est affecté à un compte (ventilation obligatoire).",
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    height: 1.4,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

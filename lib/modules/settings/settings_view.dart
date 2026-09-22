@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:samafi_mobile/core/constants.dart';
 import 'package:samafi_mobile/data/repository.dart';
 import 'package:samafi_mobile/routes/app_routes.dart';
 import 'package:samafi_mobile/shared/widgets.dart';
@@ -41,11 +42,27 @@ class SettingsController extends GetxController {
     }
   }
 
-  /// Partage l'historique complet des opérations au format CSV.
+  /// Partage l'historique complet des opérations au format CSV (.csv).
   Future<void> exportCsv() async {
     try {
-      await Share.share(
-        repo.exportTransactionsCsv(),
+      final csvStr = repo.exportTransactionsCsv();
+      final tempDir = Directory.systemTemp;
+      final now = DateTime.now();
+      final timestamp =
+          '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_'
+          '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      final fileName = 'smartfin_operations_$timestamp.csv';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsString(csvStr, flush: true);
+
+      await Share.shareXFiles(
+        [
+          XFile(
+            file.path,
+            mimeType: 'text/csv',
+            name: fileName,
+          ),
+        ],
         subject: 'SmartFin — Historique des opérations',
       );
     } catch (e) {
@@ -53,13 +70,28 @@ class SettingsController extends GetxController {
     }
   }
 
-  /// Exporte la sauvegarde complète de l'application en JSON (v1.1.0).
+  /// Exporte la sauvegarde complète de l'application au format JSON natif (.json).
   Future<void> exportBackup() async {
     try {
       final jsonStr = repo.exportBackupJson();
-      await Share.share(
-        jsonStr,
-        subject: 'SmartFin — Sauvegarde complète (v1.1.0)',
+      final tempDir = Directory.systemTemp;
+      final now = DateTime.now();
+      final timestamp =
+          '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_'
+          '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+      final fileName = 'smartfin_backup_$timestamp.json';
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsString(jsonStr, flush: true);
+
+      await Share.shareXFiles(
+        [
+          XFile(
+            file.path,
+            mimeType: 'application/json',
+            name: fileName,
+          ),
+        ],
+        subject: 'SmartFin — Sauvegarde ($fileName)',
       );
     } catch (e) {
       errorSnack(e);
@@ -82,7 +114,7 @@ class SettingsController extends GetxController {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Importer une sauvegarde (v1.1.0)',
+                    'Importer une sauvegarde (JSON)',
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                   ),
                   SizedBox(height: 3),
@@ -126,7 +158,7 @@ class SettingsController extends GetxController {
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json'],
+        allowedExtensions: ['json', 'txt'],
         withData: true,
       );
       if (result == null || result.files.isEmpty) return;
@@ -360,26 +392,44 @@ class SettingsView extends GetView<SettingsController> {
           ),
           // ---- à propos -------------------------------------------------
           const SectionHeader(title: 'À propos'),
-          const Card(
+          Card(
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.info_outline),
-                  title: Text('Version'),
-                  trailing: Text(
-                    '1.1.0',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('Version'),
+                  subtitle: const Text('Consulter le journal des modifications'),
+                  trailing: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        kAppVersion,
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 20),
+                    ],
                   ),
+                  onTap: () => _showChangelogSheet(context),
                 ),
-                Divider(indent: 16, endIndent: 16),
+                const Divider(indent: 16, endIndent: 16),
                 ListTile(
+                  leading: const Icon(Icons.history_edu_outlined),
+                  title: const Text('Nouveautés & Changelog'),
+                  subtitle:
+                      const Text('Détail des évolutions de chaque version'),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => _showChangelogSheet(context),
+                ),
+                const Divider(indent: 16, endIndent: 16),
+                const ListTile(
                   leading: Icon(Icons.code),
                   title: Text('Technologies'),
                   subtitle: Text('Flutter · GetX · GetStorage · fl_chart'),
                 ),
-                Divider(indent: 16, endIndent: 16),
-                ListTile(
+                const Divider(indent: 16, endIndent: 16),
+                const ListTile(
                   leading: Icon(Icons.lock_outline),
                   title: Text('Confidentialité'),
                   subtitle:
@@ -390,6 +440,141 @@ class SettingsView extends GetView<SettingsController> {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+
+  /// Feuille modale affichant le journal complet des modifications de l'application.
+  void _showChangelogSheet(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.history_edu, color: cs.primary, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Journal des modifications',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          'Historique des versions SmartFin',
+                          style: TextStyle(fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              for (final entry in kChangelog) ...[
+                Card(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: entry.version == kAppVersion
+                                    ? cs.primary.withOpacity(0.15)
+                                    : cs.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'v${entry.version}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: entry.version == kAppVersion
+                                      ? cs.primary
+                                      : cs.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              entry.date,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          entry.title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...entry.changes.map(
+                          (c) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('• ',
+                                    style: TextStyle(fontWeight: FontWeight.w800)),
+                                Expanded(
+                                  child: Text(
+                                    c,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      height: 1.35,
+                                      color: cs.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

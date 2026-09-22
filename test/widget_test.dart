@@ -1,12 +1,28 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:samafi_mobile/core/constants.dart';
 import 'package:samafi_mobile/core/format.dart';
 import 'package:samafi_mobile/data/models.dart';
+import 'package:samafi_mobile/data/repository.dart';
+import 'package:samafi_mobile/shared/widgets.dart';
 
 void main() {
   setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final tempDir = await Directory.systemTemp.createTemp('samafi_test_');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (MethodCall methodCall) async => tempDir.path,
+    );
+    await GetStorage.init(FinanceRepository.storageName);
     await initializeDateFormatting('fr_FR');
   });
 
@@ -79,5 +95,236 @@ void main() {
       expect(tx.type, TxType.income);
       expect(tx.label, 'Virement Salaire');
     });
+
+    test('Purchase copyWith and price modification test', () {
+      final purchase = Purchase(
+        id: 'p-1',
+        title: 'Smartphone',
+        targetCost: 150000,
+        deadline: DateTime(2026, 12, 31),
+        accountId: 'acc-cagnotte-1',
+        createdAt: DateTime(2026, 9, 20),
+      );
+
+      expect(purchase.targetCost, 150000);
+      expect(purchase.title, 'Smartphone');
+
+      // Modifier le prix si le prix après ne correspond plus (ex: augmentation à 185 000 FCFA)
+      final modifiedPrice = purchase.copyWith(targetCost: 185000);
+      expect(modifiedPrice.targetCost, 185000);
+      expect(modifiedPrice.title, 'Smartphone');
+      expect(modifiedPrice.deadline, DateTime(2026, 12, 31));
+
+      // Modifier le titre et effacer l'échéance
+      final modifiedAll = purchase.copyWith(
+        title: 'Smartphone Samsung S24',
+        targetCost: 200000,
+        clearDeadline: true,
+      );
+      expect(modifiedAll.title, 'Smartphone Samsung S24');
+      expect(modifiedAll.targetCost, 200000);
+      expect(modifiedAll.deadline, isNull);
+    });
+
+    test('Transaction copyWith test', () {
+      final tx = Transaction(
+        id: 'tx-1',
+        type: TxType.expense,
+        amount: 5000,
+        label: 'Taxi',
+        category: 'Transport',
+        date: DateTime(2026, 9, 22),
+        accountId: 'acc-1',
+        createdAt: DateTime(2026, 9, 22),
+      );
+
+      final updated = tx.copyWith(amount: 7000);
+      expect(updated.amount, 7000);
+      expect(updated.label, 'Taxi');
+      expect(updated.type, TxType.expense);
+    });
+
+    test('App version and changelog test', () {
+      expect(kAppVersion, '1.1.2');
+      expect(kChangelog.length, 5);
+      expect(kChangelog.first.version, '1.1.2');
+      expect(kChangelog.any((e) => e.version == '1.1.1'), isTrue);
+      expect(kChangelog.any((e) => e.version == '1.1.0'), isTrue);
+      expect(kChangelog.any((e) => e.version == '1.0.1'), isTrue);
+      expect(kChangelog.any((e) => e.version == '1.0.0'), isTrue);
+    });
+
+    test('Income, Expense and Transfer amount modification tests with FinanceRepository', () async {
+      final repo = FinanceRepository();
+      repo.resetAll();
+
+      // Création de deux comptes
+      final wallet = repo.addAccount(
+        name: 'Portefeuille Test',
+        role: AccountRole.wallet,
+        initialBalance: 50000,
+      );
+      final savings = repo.addAccount(
+        name: 'Caisse Épargne',
+        role: AccountRole.savings,
+        initialBalance: 20000,
+      );
+
+      expect(repo.accountById(wallet.id)!.balance, 50000);
+      expect(repo.accountById(savings.id)!.balance, 20000);
+
+      // --- 1. Test Encaissement & Modification montant ---
+      repo.addIncome(
+        totalAmount: 30000,
+        label: 'Salaire Freelance',
+        allocations: [
+          Allocation(accountId: wallet.id, amount: 30000),
+        ],
+      );
+      expect(repo.accountById(wallet.id)!.balance, 80000);
+
+      final incomeTx = repo.transactions.firstWhere((t) => t.type == TxType.income);
+      expect(incomeTx.amount, 30000);
+
+      // Augmentation du montant de l'encaissement : 30 000 -> 45 000 (+15 000)
+      repo.updateIncomeAmount(transactionId: incomeTx.id, newAmount: 45000);
+      expect(repo.accountById(wallet.id)!.balance, 95000);
+      expect(repo.transactionById(incomeTx.id)!.amount, 45000);
+
+      // Diminution du montant de l'encaissement : 45 000 -> 35 000 (-10 000)
+      repo.updateIncomeAmount(transactionId: incomeTx.id, newAmount: 35000);
+      expect(repo.accountById(wallet.id)!.balance, 85000);
+      expect(repo.transactionById(incomeTx.id)!.amount, 35000);
+
+      // Diminution impossible si solde insuffisant (ex: retirer plus que le solde disponible)
+      expect(
+        () => repo.updateIncomeAmount(transactionId: incomeTx.id, newAmount: -1000),
+        throwsA(isA<AppException>()),
+      );
+
+      // --- 2. Test Dépense & Modification montant ---
+      repo.addExpense(
+        amount: 20000,
+        label: 'Abonnement Internet',
+        accountId: wallet.id,
+        category: 'Factures',
+      );
+      // wallet: 85000 - 20000 = 65000
+      expect(repo.accountById(wallet.id)!.balance, 65000);
+
+      final expenseTx = repo.transactions.firstWhere((t) => t.type == TxType.expense);
+      expect(expenseTx.amount, 20000);
+
+      // Augmentation de la dépense : 20 000 -> 30 000 (débit supplémentaire de 10 000)
+      repo.updateExpenseAmount(transactionId: expenseTx.id, newAmount: 30000);
+      expect(repo.accountById(wallet.id)!.balance, 55000);
+      expect(repo.transactionById(expenseTx.id)!.amount, 30000);
+
+      // Diminution de la dépense : 30 000 -> 10 000 (recrédit de 20 000)
+      repo.updateExpenseAmount(transactionId: expenseTx.id, newAmount: 10000);
+      expect(repo.accountById(wallet.id)!.balance, 75000);
+      expect(repo.transactionById(expenseTx.id)!.amount, 10000);
+
+      // --- 3. Test Virement & Modification montant ---
+      repo.transfer(
+        amount: 25000,
+        fromAccountId: wallet.id,
+        toAccountId: savings.id,
+        label: 'Virement vers épargne',
+      );
+      // wallet: 75000 - 25000 = 50000 ; savings: 20000 + 25000 = 45000
+      expect(repo.accountById(wallet.id)!.balance, 50000);
+      expect(repo.accountById(savings.id)!.balance, 45000);
+
+      final transferTx = repo.transactions.firstWhere((t) => t.type == TxType.transfer);
+      expect(transferTx.amount, 25000);
+
+      // Augmentation du virement : 25 000 -> 35 000 (+10 000 de wallet vers savings)
+      repo.updateTransferAmount(transactionId: transferTx.id, newAmount: 35000);
+      expect(repo.accountById(wallet.id)!.balance, 40000);
+      expect(repo.accountById(savings.id)!.balance, 55000);
+      expect(repo.transactionById(transferTx.id)!.amount, 35000);
+
+      // Diminution du virement : 35 000 -> 15 000 (savings rend 20 000 à wallet)
+      repo.updateTransferAmount(transactionId: transferTx.id, newAmount: 15000);
+      expect(repo.accountById(wallet.id)!.balance, 60000);
+      expect(repo.accountById(savings.id)!.balance, 35000);
+      expect(repo.transactionById(transferTx.id)!.amount, 15000);
+
+      // Impossible de diminuer le virement si le compte destination n'a plus assez
+      expect(
+        () => repo.updateTransferAmount(transactionId: transferTx.id, newAmount: -50000),
+        throwsA(isA<AppException>()),
+      );
+
+      // --- 4. Test Dispatcher universel updateTransactionAmount ---
+      // Modification dépense via updateTransactionAmount
+      repo.updateTransactionAmount(transactionId: expenseTx.id, newAmount: 15000);
+      expect(repo.accountById(wallet.id)!.balance, 55000); // 60000 - 5000 = 55000
+
+      // Modification encaissement via updateTransactionAmount
+      repo.updateTransactionAmount(transactionId: incomeTx.id, newAmount: 40000);
+      expect(repo.accountById(wallet.id)!.balance, 60000); // 55000 + 5000 = 60000
+
+      // Modification virement via updateTransactionAmount
+      repo.updateTransactionAmount(transactionId: transferTx.id, newAmount: 20000);
+      expect(repo.accountById(wallet.id)!.balance, 55000); // 60000 - 5000 = 55000
+      expect(repo.accountById(savings.id)!.balance, 40000); // 35000 + 5000 = 40000
+    });
+
+    testWidgets('showEditTransactionAmountSheet modifies amount and closes cleanly without controller disposal error', (tester) async {
+      final repo = FinanceRepository();
+      repo.resetAll();
+      Get.reset();
+      Get.put<FinanceRepository>(repo);
+
+      final wallet = repo.addAccount(
+        name: 'Compte Test',
+        role: AccountRole.wallet,
+        initialBalance: 50000,
+      );
+
+      repo.addExpense(
+        amount: 5000,
+        label: 'Achat Test',
+        accountId: wallet.id,
+      );
+
+      final tx = repo.transactions.firstWhere((t) => t.type == TxType.expense);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showEditTransactionAmountSheet(context, tx),
+                child: const Text('Open Sheet'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Modifier le montant de la dépense'), findsOneWidget);
+
+      // Saisie du nouveau montant
+      final amountFinder = find.byType(TextFormField);
+      expect(amountFinder, findsOneWidget);
+      await tester.enterText(amountFinder, '8000');
+      await tester.pump();
+
+      // Enregistrer
+      await tester.tap(find.text('Enregistrer le nouveau montant'));
+      await tester.pumpAndSettle();
+
+      // Vérification : la feuille se ferme sans erreur de contrôleur disposed et les données sont à jour
+      expect(find.text('Modifier le montant de la dépense'), findsNothing);
+      expect(repo.transactionById(tx.id)!.amount, 8000);
+      expect(repo.accountById(wallet.id)!.balance, 42000); // 50000 - 8000 = 42000
+    });
   });
 }
+

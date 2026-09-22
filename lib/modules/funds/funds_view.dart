@@ -274,299 +274,34 @@ class FundsView extends GetView<FundsController> {
   // ---- dépense objet -----------------------------------------------------------
 
   Future<void> _openSpendSheet(BuildContext context, FundStat stat) {
-    final repo = Get.find<FinanceRepository>();
-    final fund = stat.fund;
-    final amountCtrl = TextEditingController();
-    final labelCtrl = TextEditingController();
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Dépense objet — ${fund.title}",
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Objet convenu : ${fund.purpose}",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Theme.of(sheetContext)
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AmountField(
-                  controller: amountCtrl,
-                  label: "Montant",
-                  hint: "Disponible : ${fcfa(stat.balance)}",
-                ),
-                LabeledField(
-                  label: "Libellé",
-                  child: TextFormField(
-                    controller: labelCtrl,
-                    decoration: const InputDecoration(
-                      hintText: "Tissus chez Ndiaye…",
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      final amount = parseAmount(amountCtrl.text) ?? 0;
-                      final label = labelCtrl.text.trim();
-                      if (amount <= 0) {
-                        errorSnack(AppException(
-                            "La dépense objet doit être supérieure à 0 FCFA."));
-                        return;
-                      }
-                      if (label.isEmpty) {
-                        errorSnack(AppException(
-                            "Le libellé de la dépense est obligatoire."));
-                        return;
-                      }
-                      try {
-                        repo.spendFund(
-                          fundId: fund.id,
-                          amount: amount,
-                          label: label,
-                        );
-                        Get.back();
-                        successSnack(
-                          "Dépense objet enregistrée",
-                          "${fcfa(amount)} pour « ${fund.purpose} ».",
-                        );
-                      } catch (e) {
-                        errorSnack(e);
-                      }
-                    },
-                    icon: const Icon(Icons.receipt_long_outlined, size: 19),
-                    label: const Text("Enregistrer la dépense"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ).whenComplete(() {
-      amountCtrl.dispose();
-      labelCtrl.dispose();
-    });
+      builder: (_) => _SpendFundSheet(stat: stat),
+    );
   }
 
   // ---- détournement (créance interne) ---------------------------------------------
 
   Future<void> _openDivertSheet(BuildContext context, FundStat stat) {
-    final repo = Get.find<FinanceRepository>();
-    final fund = stat.fund;
-    final amountCtrl = TextEditingController();
-    final selected = Rxn<Account>();
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Détourner — ${fund.title}",
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "L'argent part sur un usage personnel : une créance est enregistrée envers ${fund.owner}.",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    height: 1.4,
-                    color: Theme.of(sheetContext)
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AmountField(
-                  controller: amountCtrl,
-                  label: "Montant détourné",
-                  hint: "Disponible : ${fcfa(stat.balance)}",
-                ),
-                LabeledField(
-                  label: "Compte de destination",
-                  child: _sheetAccountSelector(
-                    sheetContext,
-                    selected: selected,
-                    accounts: repo.personalAccounts,
-                    emptyLabel: "Choisir un compte personnel",
-                    title: "Compte de destination",
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      final amount = parseAmount(amountCtrl.text) ?? 0;
-                      final account = selected.value;
-                      if (amount <= 0) {
-                        errorSnack(AppException(
-                            "Le montant détourné doit être supérieur à 0 FCFA."));
-                        return;
-                      }
-                      if (account == null) {
-                        errorSnack(AppException(
-                            "Choisissez le compte de destination du détournement."));
-                        return;
-                      }
-                      try {
-                        repo.divertFund(
-                          fundId: fund.id,
-                          amount: amount,
-                          destinationAccountId: account.id,
-                        );
-                        Get.back();
-                        successSnack(
-                          "Détournement enregistré",
-                          "${fcfa(amount)} vers « ${account.name} » — créance envers ${fund.owner}.",
-                        );
-                      } catch (e) {
-                        errorSnack(e);
-                      }
-                    },
-                    icon: const Icon(Icons.redo, size: 19),
-                    label: const Text("Détourner le montant"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ).whenComplete(amountCtrl.dispose);
+      builder: (_) => _DivertFundSheet(stat: stat),
+    );
   }
 
   // ---- reversement de créance --------------------------------------------------------
 
   Future<void> _openReimburseSheet(BuildContext context, FundStat stat) {
-    final repo = Get.find<FinanceRepository>();
-    final fund = stat.fund;
-    final amountCtrl = TextEditingController();
-    final selected = Rxn<Account>();
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Reverser — ${fund.title}",
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Créance envers ${fund.owner} : ${fcfa(stat.creance)}.",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Theme.of(sheetContext)
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AmountField(
-                  controller: amountCtrl,
-                  label: "Montant à reverser",
-                  hint: "Maximum : ${fcfa(stat.creance)}",
-                ),
-                LabeledField(
-                  label: "Compte source",
-                  hint: "D'où part l'argent rendu au fonds ?",
-                  child: _sheetAccountSelector(
-                    sheetContext,
-                    selected: selected,
-                    accounts: repo.personalAccounts,
-                    emptyLabel: "Choisir un compte personnel",
-                    title: "Compte source",
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      final amount = parseAmount(amountCtrl.text) ?? 0;
-                      final account = selected.value;
-                      if (amount <= 0) {
-                        errorSnack(AppException(
-                            "Le reversement doit être supérieur à 0 FCFA."));
-                        return;
-                      }
-                      if (account == null) {
-                        errorSnack(AppException(
-                            "Choisissez le compte source du reversement."));
-                        return;
-                      }
-                      try {
-                        repo.reimburseFund(
-                          fundId: fund.id,
-                          amount: amount,
-                          fromAccountId: account.id,
-                        );
-                        Get.back();
-                        successSnack(
-                          "Reversement enregistré",
-                          "${fcfa(amount)} rendus à ${fund.owner}.",
-                        );
-                      } catch (e) {
-                        errorSnack(e);
-                      }
-                    },
-                    icon: const Icon(Icons.undo, size: 19),
-                    label: const Text("Reverser"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ).whenComplete(amountCtrl.dispose);
+      builder: (_) => _ReimburseFundSheet(stat: stat),
+    );
   }
 
   // ---- clôture --------------------------------------------------------------------
@@ -657,4 +392,355 @@ Widget _sheetAccountSelector(
       ),
     );
   });
+}
+
+class _SpendFundSheet extends StatefulWidget {
+  final FundStat stat;
+  const _SpendFundSheet({required this.stat});
+
+  @override
+  State<_SpendFundSheet> createState() => _SpendFundSheetState();
+}
+
+class _SpendFundSheetState extends State<_SpendFundSheet> {
+  late final TextEditingController _amountCtrl;
+  late final TextEditingController _labelCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl = TextEditingController();
+    _labelCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _labelCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Get.find<FinanceRepository>();
+    final fund = widget.stat.fund;
+    final stat = widget.stat;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Dépense objet — ${fund.title}",
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Objet convenu : ${fund.purpose}",
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              AmountField(
+                controller: _amountCtrl,
+                label: "Montant",
+                hint: "Disponible : ${fcfa(stat.balance)}",
+              ),
+              LabeledField(
+                label: "Libellé",
+                child: TextFormField(
+                  controller: _labelCtrl,
+                  decoration: const InputDecoration(
+                    hintText: "Tissus chez Ndiaye…",
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final amount = parseAmount(_amountCtrl.text) ?? 0;
+                    final label = _labelCtrl.text.trim();
+                    if (amount <= 0) {
+                      errorSnack(AppException(
+                          "La dépense objet doit être supérieure à 0 FCFA."));
+                      return;
+                    }
+                    if (label.isEmpty) {
+                      errorSnack(AppException(
+                          "Le libellé de la dépense est obligatoire."));
+                      return;
+                    }
+                    try {
+                      repo.spendFund(
+                        fundId: fund.id,
+                        amount: amount,
+                        label: label,
+                      );
+                      Navigator.of(context).pop();
+                      successSnack(
+                        "Dépense objet enregistrée",
+                        "${fcfa(amount)} pour « ${fund.purpose} ».",
+                      );
+                    } catch (e) {
+                      errorSnack(e);
+                    }
+                  },
+                  icon: const Icon(Icons.receipt_long_outlined, size: 19),
+                  label: const Text("Enregistrer la dépense"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DivertFundSheet extends StatefulWidget {
+  final FundStat stat;
+  const _DivertFundSheet({required this.stat});
+
+  @override
+  State<_DivertFundSheet> createState() => _DivertFundSheetState();
+}
+
+class _DivertFundSheetState extends State<_DivertFundSheet> {
+  late final TextEditingController _amountCtrl;
+  final _selected = Rxn<Account>();
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Get.find<FinanceRepository>();
+    final fund = widget.stat.fund;
+    final stat = widget.stat;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Détourner — ${fund.title}",
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "L'argent part sur un usage personnel : une créance est enregistrée envers ${fund.owner}.",
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              AmountField(
+                controller: _amountCtrl,
+                label: "Montant détourné",
+                hint: "Disponible : ${fcfa(stat.balance)}",
+              ),
+              LabeledField(
+                label: "Compte de destination",
+                child: _sheetAccountSelector(
+                  context,
+                  selected: _selected,
+                  accounts: repo.personalAccounts,
+                  emptyLabel: "Choisir un compte personnel",
+                  title: "Compte de destination",
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final amount = parseAmount(_amountCtrl.text) ?? 0;
+                    final account = _selected.value;
+                    if (amount <= 0) {
+                      errorSnack(AppException(
+                          "Le montant détourné doit être supérieur à 0 FCFA."));
+                      return;
+                    }
+                    if (account == null) {
+                      errorSnack(AppException(
+                          "Choisissez le compte de destination du détournement."));
+                      return;
+                    }
+                    try {
+                      repo.divertFund(
+                        fundId: fund.id,
+                        amount: amount,
+                        destinationAccountId: account.id,
+                      );
+                      Navigator.of(context).pop();
+                      successSnack(
+                        "Détournement enregistré",
+                        "${fcfa(amount)} vers « ${account.name} » — créance envers ${fund.owner}.",
+                      );
+                    } catch (e) {
+                      errorSnack(e);
+                    }
+                  },
+                  icon: const Icon(Icons.redo, size: 19),
+                  label: const Text("Détourner le montant"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReimburseFundSheet extends StatefulWidget {
+  final FundStat stat;
+  const _ReimburseFundSheet({required this.stat});
+
+  @override
+  State<_ReimburseFundSheet> createState() => _ReimburseFundSheetState();
+}
+
+class _ReimburseFundSheetState extends State<_ReimburseFundSheet> {
+  late final TextEditingController _amountCtrl;
+  final _selected = Rxn<Account>();
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Get.find<FinanceRepository>();
+    final fund = widget.stat.fund;
+    final stat = widget.stat;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Reverser — ${fund.title}",
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Créance envers ${fund.owner} : ${fcfa(stat.creance)}.",
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              AmountField(
+                controller: _amountCtrl,
+                label: "Montant à reverser",
+                hint: "Maximum : ${fcfa(stat.creance)}",
+              ),
+              LabeledField(
+                label: "Compte source",
+                hint: "D'où part l'argent rendu au fonds ?",
+                child: _sheetAccountSelector(
+                  context,
+                  selected: _selected,
+                  accounts: repo.personalAccounts,
+                  emptyLabel: "Choisir un compte personnel",
+                  title: "Compte source",
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final amount = parseAmount(_amountCtrl.text) ?? 0;
+                    final account = _selected.value;
+                    if (amount <= 0) {
+                      errorSnack(AppException(
+                          "Le reversement doit être supérieur à 0 FCFA."));
+                      return;
+                    }
+                    if (account == null) {
+                      errorSnack(AppException(
+                          "Choisissez le compte source du reversement."));
+                      return;
+                    }
+                    try {
+                      repo.reimburseFund(
+                        fundId: fund.id,
+                        amount: amount,
+                        fromAccountId: account.id,
+                      );
+                      Navigator.of(context).pop();
+                      successSnack(
+                        "Reversement enregistré",
+                        "${fcfa(amount)} rendus à ${fund.owner}.",
+                      );
+                    } catch (e) {
+                      errorSnack(e);
+                    }
+                  },
+                  icon: const Icon(Icons.undo, size: 19),
+                  label: const Text("Reverser"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

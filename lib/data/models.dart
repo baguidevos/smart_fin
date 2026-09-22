@@ -235,6 +235,39 @@ class Transaction {
     required this.createdAt,
   });
 
+  Transaction copyWith({
+    TxType? type,
+    int? amount,
+    String? label,
+    String? category,
+    DateTime? date,
+    String? accountId,
+    String? fromAccountId,
+    String? toAccountId,
+    String? purchaseId,
+    String? thirdPartyFundId,
+    String? tontineId,
+    String? debtId,
+    String? auditTrail,
+  }) =>
+      Transaction(
+        id: id,
+        type: type ?? this.type,
+        amount: amount ?? this.amount,
+        label: label ?? this.label,
+        category: category ?? this.category,
+        date: date ?? this.date,
+        accountId: accountId ?? this.accountId,
+        fromAccountId: fromAccountId ?? this.fromAccountId,
+        toAccountId: toAccountId ?? this.toAccountId,
+        purchaseId: purchaseId ?? this.purchaseId,
+        thirdPartyFundId: thirdPartyFundId ?? this.thirdPartyFundId,
+        tontineId: tontineId ?? this.tontineId,
+        debtId: debtId ?? this.debtId,
+        auditTrail: auditTrail ?? this.auditTrail,
+        createdAt: createdAt,
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type.name.toUpperCase(),
@@ -660,15 +693,26 @@ class Purchase {
     required this.createdAt,
   });
 
-  Purchase copyWith({PurchaseStatus? status, DateTime? closedAt}) => Purchase(
+  Purchase copyWith({
+    String? title,
+    int? targetCost,
+    DateTime? deadline,
+    PurchaseStatus? status,
+    String? icon,
+    String? color,
+    String? accountId,
+    DateTime? closedAt,
+    bool clearDeadline = false,
+  }) =>
+      Purchase(
         id: id,
-        title: title,
-        targetCost: targetCost,
-        deadline: deadline,
+        title: title ?? this.title,
+        targetCost: targetCost ?? this.targetCost,
+        deadline: clearDeadline ? null : (deadline ?? this.deadline),
         status: status ?? this.status,
-        icon: icon,
-        color: color,
-        accountId: accountId,
+        icon: icon ?? this.icon,
+        color: color ?? this.color,
+        accountId: accountId ?? this.accountId,
         closedAt: closedAt ?? this.closedAt,
         createdAt: createdAt,
       );

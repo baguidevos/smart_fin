@@ -117,7 +117,7 @@ class OnboardingController extends GetxController {
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json'],
+        allowedExtensions: ['json', 'txt'],
         withData: true,
       );
 

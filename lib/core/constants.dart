@@ -154,3 +154,90 @@ extension TxTypeX on TxType {
   /// dépense de consommation (§ dettes explicites — cahier des charges).
   bool get isDebtFlow => this == TxType.debtIn || this == TxType.debtRepay;
 }
+
+/// Version actuelle de l'application.
+const String kAppVersion = '1.1.2';
+
+/// Entrée du journal des versions (changelog).
+class ChangelogEntry {
+  final String version;
+  final String date;
+  final String title;
+  final List<String> changes;
+
+  const ChangelogEntry({
+    required this.version,
+    required this.date,
+    required this.title,
+    required this.changes,
+  });
+}
+
+/// Historique complet des versions et nouveautés de l'application.
+const List<ChangelogEntry> kChangelog = [
+  ChangelogEntry(
+    version: '1.1.2',
+    date: '22 septembre 2026',
+    title: 'Export/Import natif JSON (.json) & Stabilité des fenêtres modales',
+    changes: [
+      'Sauvegardes : exportation directe sous forme de fichier réel .json (MIME application/json) pour éliminer le format .txt imposé par certains gestionnaires.',
+      'Restauration : sélecteur de fichier optimisé pour .json avec compatibilité de secours pour les fichiers .txt existants.',
+      'Résilience JSON : prise en charge automatique des fichiers avec marque d\'ordre des octets (BOM UTF-8).',
+      'Historique CSV : exportation sous forme de vrai fichier .csv avec nommage horodaté.',
+      'Correctif critique : élimination de l\'erreur "TextEditingController was used after being disposed" lors de la fermeture des fenêtres modales.',
+    ],
+  ),
+  ChangelogEntry(
+    version: '1.1.1',
+    date: '22 septembre 2026',
+    title: "Ajustement des projets d'achat & modification des opérations (dépenses, encaissements, virements)",
+    changes: [
+      "Projets d'achat : modification possible du coût cible (prix) si le prix réel a évolué, du titre et de la date d'échéance.",
+      "Projets d'achat : synchronisation automatique du nom du compte cagnotte dédié et recalcul réactif de la progression.",
+      "Projets d'achat : option de suppression propre lorsqu'aucune cotisation n'a encore été engagée.",
+      "Dépenses : correction du montant dépensé avec réajustement automatique du compte payeur.",
+      "Encaissements : modification du montant encaissé avec réajustement immédiat du solde du compte bénéficiaire.",
+      "Virements internes : modification du montant transféré avec rééquilibrage automatique des comptes source et destination.",
+      "Piste d'audit et contrôles de solde : traçabilité complète de l'historique et protection stricte contre les soldes négatifs.",
+      "Journal des modifications : intégration du changelog complet accessible depuis les paramètres.",
+    ],
+  ),
+  ChangelogEntry(
+    version: '1.1.0',
+    date: '21 septembre 2026',
+    title: 'Sauvegardes complètes & Identité SmartFin',
+    changes: [
+      'Exportation et importation complètes des données au format JSON (v1.1.0).',
+      "Restauration de sauvegarde dès l'onboarding (premier démarrage) ou à tout moment dans les Paramètres.",
+      'Sélecteur de fichier .json natif et zone de collage manuel pour une flexibilité maximale.',
+      'Renommage et harmonisation complète sous le nom officiel SmartFin.',
+      "Préservation de l'audit trail complet et intégrité comptable lors de l'importation.",
+    ],
+  ),
+  ChangelogEntry(
+    version: '1.0.1',
+    date: '20 septembre 2026',
+    title: 'Correctifs graphiques & Expérience utilisateur',
+    changes: [
+      "Résolution des débordements d'affichage (overflow) sur les écrans d'accueil (Splash et Onboarding).",
+      "Unification du bouton d'action flottant (FAB) dans ShellView pour éliminer les conflits d'animations.",
+      "Amélioration de la lisibilité des badges et puces d'échéance.",
+    ],
+  ),
+  ChangelogEntry(
+    version: '1.0.0',
+    date: '19 septembre 2026',
+    title: 'Lancement initial de SamaFi Mobile',
+    changes: [
+      'Application de gestion financière personnelle en FCFA fonctionnant 100% hors-ligne.',
+      'Gestion multi-comptes : Caisse, Charges fixes, Épargne, Enveloppes, Projets, Fiducie et Tontines.',
+      'Ventilation stricte des encaissements sur plusieurs comptes.',
+      'Gestion des dettes et emprunts avec traçabilité intégrale des remboursements.',
+      'Étanchéité des fonds tiers (fiducie) avec détection des détournements et reversements.',
+      'Gestion des cycles et cotisations de tontines.',
+      "Achats planifiés avec constitution de cagnottes et redirection sécurisée en cas de renoncement.",
+      'Tableau de bord financier dynamique avec graphiques et synthèse mensuelle.',
+      'Historique complet des mouvements avec recherche, filtres et export CSV.',
+    ],
+  ),
+];

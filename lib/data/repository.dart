@@ -131,6 +131,9 @@ class FinanceRepository extends GetxService {
   ThirdPartyFund? fundById(String? id) =>
       id == null ? null : funds.where((f) => f.id == id).firstOrNull;
 
+  Transaction? transactionById(String? id) =>
+      id == null ? null : transactions.where((t) => t.id == id).firstOrNull;
+
   String? accountName(String? id) => accountById(id)?.name;
 
   /// Comptes non archivés.
@@ -554,6 +557,51 @@ class FinanceRepository extends GetxService {
     _commit();
   }
 
+  /// Met à jour le montant d'un encaissement enregistré.
+  /// Réajuste le solde du compte bénéficiaire :
+  /// - Si le montant augmente, le compte est crédité du supplément.
+  /// - Si le montant diminue, la différence est retirée du compte (après vérification que le solde est suffisant).
+  void updateIncomeAmount({
+    required String transactionId,
+    required int newAmount,
+  }) {
+    final tx = transactionById(transactionId);
+    if (tx == null) _fail("Encaissement introuvable.");
+    if (tx.type != TxType.income) {
+      _fail("Seul un encaissement peut être modifié par cette opération.");
+    }
+    _guardPositive(newAmount, "Le montant de l'encaissement");
+
+    final oldAmount = tx.amount;
+    if (oldAmount == newAmount) return;
+
+    final accountId = tx.toAccountId ?? tx.accountId;
+    if (accountId == null) {
+      _fail("Compte bénéficiaire introuvable pour cet encaissement.");
+    }
+    final account = accountById(accountId);
+    if (account == null) _fail("Compte bénéficiaire introuvable.");
+
+    final diff = newAmount - oldAmount;
+    if (diff > 0) {
+      // L'encaissement a augmenté : on crédite le compte du supplément
+      _credit(account, diff);
+    } else {
+      // L'encaissement a diminué : on doit déduire l'excédent du compte
+      final toDeduct = -diff;
+      _guardSufficient(account, toDeduct);
+      _debit(account, toDeduct);
+    }
+
+    final i = transactions.indexWhere((t) => t.id == transactionId);
+    transactions[i] = transactions[i].copyWith(
+      amount: newAmount,
+      auditTrail:
+          "Encaissement « ${tx.label} » modifié : montant passé de ${fcfa(oldAmount)} à ${fcfa(newAmount)} sur « ${account.name} » — solde actuel : ${fcfa(account.balance)}.",
+    );
+    _commit();
+  }
+
   // -- dépense ---------------------------------------------------------------
 
   void addExpense({
@@ -588,6 +636,48 @@ class FinanceRepository extends GetxService {
           "Dépense « $trimmed »${category != null ? " ($category)" : ""} payée depuis « ${account.name} » — solde après opération : ${fcfa(account.balance - amount)}.",
     );
     _debit(account, amount);
+    _commit();
+  }
+
+  /// Met à jour le montant d'une dépense enregistrée.
+  /// Réajuste le solde du compte payeur :
+  /// - Si le montant augmente, le compte est débité du complément (après vérification du solde suffisant).
+  /// - Si le montant diminue, le compte est recrédité de la différence.
+  void updateExpenseAmount({
+    required String transactionId,
+    required int newAmount,
+  }) {
+    final tx = transactionById(transactionId);
+    if (tx == null) _fail("Dépense introuvable.");
+    if (tx.type != TxType.expense) {
+      _fail("Seule une dépense peut être modifiée par cette opération.");
+    }
+    _guardPositive(newAmount, "Le montant de la dépense");
+
+    final oldAmount = tx.amount;
+    if (oldAmount == newAmount) return;
+
+    final accountId = tx.fromAccountId ?? tx.accountId;
+    if (accountId == null) _fail("Compte payeur introuvable pour cette dépense.");
+    final account = accountById(accountId);
+    if (account == null) _fail("Compte payeur introuvable.");
+
+    final diff = newAmount - oldAmount;
+    if (diff > 0) {
+      // La dépense a augmenté : on débite le compte payeur du supplément
+      _guardSufficient(account, diff);
+      _debit(account, diff);
+    } else {
+      // La dépense a diminué : on recrédite le compte payeur
+      _credit(account, -diff);
+    }
+
+    final i = transactions.indexWhere((t) => t.id == transactionId);
+    transactions[i] = transactions[i].copyWith(
+      amount: newAmount,
+      auditTrail:
+          "Dépense « ${tx.label} »${tx.category != null ? " (${tx.category})" : ""} modifiée : montant passé de ${fcfa(oldAmount)} à ${fcfa(newAmount)} sur « ${account.name} » — solde actuel : ${fcfa(account.balance)}.",
+    );
     _commit();
   }
 
@@ -626,6 +716,78 @@ class FinanceRepository extends GetxService {
     _debit(from, amount);
     _credit(to, amount);
     _commit();
+  }
+
+  /// Met à jour le montant d'un virement interne enregistré.
+  /// Réajuste les soldes des deux comptes :
+  /// - Si le montant augmente, le compte source est débité du supplément (si solde suffisant) et la destination est créditée.
+  /// - Si le montant diminue, le compte destination est débité de l'excédent (si solde suffisant) et la source est recréditée.
+  void updateTransferAmount({
+    required String transactionId,
+    required int newAmount,
+  }) {
+    final tx = transactionById(transactionId);
+    if (tx == null) _fail("Virement introuvable.");
+    if (tx.type != TxType.transfer) {
+      _fail("Seul un virement peut être modifié par cette opération.");
+    }
+    _guardPositive(newAmount, "Le montant du virement");
+
+    final oldAmount = tx.amount;
+    if (oldAmount == newAmount) return;
+
+    final fromId = tx.fromAccountId ?? tx.accountId;
+    final toId = tx.toAccountId;
+    if (fromId == null || toId == null) {
+      _fail("Comptes source ou destination introuvables pour ce virement.");
+    }
+    final from = accountById(fromId);
+    final to = accountById(toId);
+    if (from == null || to == null) {
+      _fail("Compte source ou destination introuvable.");
+    }
+
+    final diff = newAmount - oldAmount;
+    if (diff > 0) {
+      // Le virement a augmenté : la source doit envoyer plus
+      _guardSufficient(from, diff);
+      _debit(from, diff);
+      _credit(to, diff);
+    } else {
+      // Le virement a diminué : la destination doit rendre l'excédent à la source
+      final toReturn = -diff;
+      _guardSufficient(to, toReturn);
+      _debit(to, toReturn);
+      _credit(from, toReturn);
+    }
+
+    final i = transactions.indexWhere((t) => t.id == transactionId);
+    transactions[i] = transactions[i].copyWith(
+      amount: newAmount,
+      auditTrail:
+          "Virement « ${tx.label} » modifié : montant ajusté de ${fcfa(oldAmount)} à ${fcfa(newAmount)} (« ${from.name} » → « ${to.name} »).",
+    );
+    _commit();
+  }
+
+  /// Met à jour le montant d'une opération financière (dépense, encaissement ou virement).
+  void updateTransactionAmount({
+    required String transactionId,
+    required int newAmount,
+  }) {
+    final tx = transactionById(transactionId);
+    if (tx == null) _fail("Opération introuvable.");
+    switch (tx.type) {
+      case TxType.expense:
+        updateExpenseAmount(transactionId: transactionId, newAmount: newAmount);
+      case TxType.income:
+        updateIncomeAmount(transactionId: transactionId, newAmount: newAmount);
+      case TxType.transfer:
+        updateTransferAmount(transactionId: transactionId, newAmount: newAmount);
+      default:
+        _fail(
+            "La modification de montant n'est pas supportée pour ce type d'opération (${tx.type.label}).");
+    }
   }
 
   // -- dettes explicites -------------------------------------------------------
@@ -1158,6 +1320,74 @@ class FinanceRepository extends GetxService {
     return purchase;
   }
 
+  /// Met à jour un achat planifié (titre, coût cible, date d'échéance souhaitée).
+  /// Seul un achat actif (en préparation) peut être modifié.
+  /// Le nom de la cagnotte associée est automatiquement synchronisé si le titre change.
+  void updatePurchase({
+    required String id,
+    required String title,
+    required int targetCost,
+    DateTime? deadline,
+  }) {
+    final purchase = purchaseById(id);
+    if (purchase == null) _fail("Achat introuvable.");
+    if (purchase.status != PurchaseStatus.active) {
+      _fail("Seul un achat en préparation peut être modifié.");
+    }
+    final t = title.trim();
+    if (t.isEmpty) _fail("Le titre de l'achat est obligatoire.");
+    _guardPositive(targetCost, "Le coût cible");
+
+    final i = purchases.indexWhere((p) => p.id == id);
+    purchases[i] = purchases[i].copyWith(
+      title: t,
+      targetCost: targetCost,
+      deadline: deadline,
+      clearDeadline: deadline == null,
+    );
+
+    // Synchronisation du nom du compte cagnotte si le titre change
+    final cagnotte = accountById(purchase.accountId);
+    if (cagnotte != null && cagnotte.name != "Cagnotte — $t") {
+      final accIndex = accounts.indexWhere((a) => a.id == cagnotte.id);
+      if (accIndex >= 0) {
+        accounts[accIndex] = accounts[accIndex].copyWith(name: "Cagnotte — $t");
+      }
+    }
+
+    _commit();
+  }
+
+  /// Supprime ou annule un projet d'achat.
+  /// Si la cagnotte contient de l'argent (> 0 FCFA), la suppression est bloquée
+  /// pour forcer l'utilisateur à rediriger les fonds vers un compte personnel.
+  /// Si des opérations passées existent (ex. redirection), le statut devient annulé
+  /// pour préserver l'audit trail ; sinon le projet et sa cagnotte vide sont supprimés.
+  void deletePurchase(String id) {
+    final purchase = purchaseById(id);
+    if (purchase == null) return;
+    final cagnotte = accountById(purchase.accountId);
+    if (cagnotte != null && cagnotte.balance > 0) {
+      _fail(
+          "Impossible de supprimer un achat dont la cagnotte contient encore des fonds (${fcfa(cagnotte.balance)}) — redirigez d'abord les fonds.");
+    }
+    final hasTx = transactions.any((t) =>
+        t.purchaseId == id || (cagnotte != null && t.accountId == cagnotte.id));
+    if (hasTx) {
+      final i = purchases.indexWhere((p) => p.id == id);
+      purchases[i] = purchases[i].copyWith(
+        status: PurchaseStatus.cancelled,
+        closedAt: DateTime.now(),
+      );
+    } else {
+      purchases.removeWhere((p) => p.id == id);
+      if (cagnotte != null) {
+        accounts.removeWhere((a) => a.id == cagnotte.id);
+      }
+    }
+    _commit();
+  }
+
   /// Cotisation à la cagnotte d'un achat planifié.
   void contributePurchase({
     required String purchaseId,
@@ -1334,10 +1564,10 @@ class FinanceRepository extends GetxService {
     return rows.join('\n');
   }
 
-  /// Génère une sauvegarde complète de toutes les données au format JSON (version 1.1.0).
+  /// Génère une sauvegarde complète de toutes les données au format JSON (version 1.1.1).
   String exportBackupJson() {
     final payload = {
-      'version': '1.1.0',
+      'version': kAppVersion,
       'appName': 'SmartFin',
       'exportedAt': DateTime.now().toIso8601String(),
       'data': {
@@ -1362,13 +1592,17 @@ class FinanceRepository extends GetxService {
   /// les listes sérialisées ou brutes, et persiste immédiatement l'état.
   ({int accountsCount, int transactionsCount, int debtsCount, String profileName})
       importBackupJson(String jsonString) {
-    if (jsonString.trim().isEmpty) {
+    var cleaned = jsonString.trim();
+    if (cleaned.startsWith('\uFEFF')) {
+      cleaned = cleaned.substring(1).trim();
+    }
+    if (cleaned.isEmpty) {
       throw const FormatException('Le fichier de sauvegarde est vide.');
     }
 
     dynamic decoded;
     try {
-      decoded = jsonDecode(jsonString);
+      decoded = jsonDecode(cleaned);
     } catch (e) {
       throw FormatException('Fichier JSON invalide : $e');
     }

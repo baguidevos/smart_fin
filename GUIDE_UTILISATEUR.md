@@ -107,6 +107,8 @@ Chaque fois que vous achetez quelque chose :
 4. Choisissez la **Catégorie** (Alimentation, Transport, Santé, etc.).
 5. Validez sur **« Enregistrer la dépense »**.
 
+> 💡 **Erreur de saisie sur le montant ? (Nouveauté v1.1.1+)** : Cliquez sur l'opération (dépense, encaissement ou virement) dans votre onglet **Historique** puis appuyez sur **« Modifier le montant »**. SmartFin réajuste automatiquement les soldes des comptes concernés en toute sécurité !
+
 ---
 
 ### 🔄 C. Faire un virement interne
@@ -173,6 +175,7 @@ Vous voulez acheter un nouveau téléphone à 150 000 FCFA dans 3 mois sans vous
 3. Chaque semaine, cliquez sur **« Cotiser »** pour y mettre 10 000 ou 20 000 FCFA depuis votre caisse.
 4. **Le jour J** : Cliquez sur **« Finaliser l'achat »** pour marquer l'achat comme accompli.
 5. 🔄 **Vous avez changé d'avis ?** SamaFi propose la **« Redirection assumée »** : si vous décidez finalement de ne pas acheter l'objet, l'argent cotisé est reversé sur votre compte Épargne en un seul clic !
+6. ✏️ **Le prix réel a changé en magasin ? (Nouveauté v1.1.1)** : Cliquez directement sur le bouton **« Modifier »** sur la carte de l'achat. Vous pouvez réajuster le prix cible, le titre ou la date : la progression et le reste à cotiser s'adapteront immédiatement !
 
 ---
 

@@ -123,6 +123,38 @@ class PurchasesView extends GetView<PurchasesController> {
                   const SizedBox(width: 8),
                   _deadlineChip(context, deadline, days),
                 ],
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onSelected: (value) => _onMenuSelected(context, stat, value),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Modifier'),
+                        ],
+                      ),
+                    ),
+                    if (stat.saved == 0)
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline,
+                                size: 18, color: Colors.red.shade700),
+                            const SizedBox(width: 10),
+                            Text('Supprimer',
+                                style: TextStyle(color: Colors.red.shade700)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -179,6 +211,14 @@ class PurchasesView extends GetView<PurchasesController> {
                   icon: const Icon(Icons.shopping_bag_outlined, size: 18),
                   label: const Text("Finaliser"),
                 ),
+                OutlinedButton.icon(
+                  onPressed: () => Get.toNamed(
+                    Routes.purchaseForm,
+                    arguments: purchase.id,
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text("Modifier"),
+                ),
                 TextButton(
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.amber.shade800,
@@ -228,100 +268,58 @@ class PurchasesView extends GetView<PurchasesController> {
     );
   }
 
+  void _onMenuSelected(
+    BuildContext context,
+    PurchaseStat stat,
+    String value,
+  ) {
+    switch (value) {
+      case 'edit':
+        Get.toNamed(Routes.purchaseForm, arguments: stat.purchase.id);
+        break;
+      case 'delete':
+        _confirmDelete(context, stat);
+        break;
+    }
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    PurchaseStat stat,
+  ) async {
+    final repo = Get.find<FinanceRepository>();
+    final purchase = stat.purchase;
+    if (stat.saved > 0) {
+      errorSnack(AppException(
+          "Impossible de supprimer : la cagnotte contient encore ${fcfa(stat.saved)}. Redirigez d'abord les fonds."));
+      return;
+    }
+    final confirmed = await confirmAction(
+      context,
+      title: "Supprimer « ${purchase.title} » ?",
+      message:
+          "Cette action supprimera définitivement le projet d'achat et sa cagnotte vide.",
+      confirmLabel: "Supprimer",
+      destructive: true,
+    );
+    if (!confirmed) return;
+    try {
+      repo.deletePurchase(purchase.id);
+      successSnack("Projet supprimé", "« ${purchase.title} » a été supprimé");
+    } catch (e) {
+      errorSnack(e);
+    }
+  }
+
   // ---- cotisation à la cagnotte ---------------------------------------------------
 
   Future<void> _openContributeSheet(BuildContext context, PurchaseStat stat) {
-    final repo = Get.find<FinanceRepository>();
-    final purchase = stat.purchase;
-    final amountCtrl = TextEditingController();
-    final selected = Rxn<Account>();
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Cotiser — ${purchase.title}",
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Cagnotte : ${fcfa(stat.saved)} / ${fcfa(purchase.targetCost)} · reste ${fcfa(stat.remaining)}",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Theme.of(sheetContext)
-                        .colorScheme
-                        .onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                LabeledField(
-                  label: "Compte source",
-                  hint: "D'où part l'argent ?",
-                  child: _sheetAccountSelector(
-                    sheetContext,
-                    selected: selected,
-                    accounts: repo.personalAccounts,
-                    emptyLabel: "Choisir un compte personnel",
-                    title: "Compte source",
-                  ),
-                ),
-                AmountField(
-                  controller: amountCtrl,
-                  label: "Montant de la cotisation",
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      final amount = parseAmount(amountCtrl.text) ?? 0;
-                      final account = selected.value;
-                      if (amount <= 0) {
-                        errorSnack(AppException(
-                            "La cotisation doit être supérieure à 0 FCFA."));
-                        return;
-                      }
-                      if (account == null) {
-                        errorSnack(AppException(
-                            "Choisissez le compte source de la cotisation."));
-                        return;
-                      }
-                      try {
-                        repo.contributePurchase(
-                          purchaseId: purchase.id,
-                          fromAccountId: account.id,
-                          amount: amount,
-                        );
-                        Get.back();
-                        successSnack(
-                            "Cotisation enregistrée", fcfa(amount));
-                      } catch (e) {
-                        errorSnack(e);
-                      }
-                    },
-                    icon: const Icon(Icons.check, size: 19),
-                    label: const Text("Confirmer la cotisation"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ).whenComplete(amountCtrl.dispose);
+      builder: (_) => _ContributeSheet(stat: stat),
+    );
   }
 
   // ---- finalisation de l'achat ------------------------------------------------------
@@ -557,4 +555,117 @@ Widget _sheetAccountSelector(
       ),
     );
   });
+}
+
+class _ContributeSheet extends StatefulWidget {
+  final PurchaseStat stat;
+  const _ContributeSheet({required this.stat});
+
+  @override
+  State<_ContributeSheet> createState() => _ContributeSheetState();
+}
+
+class _ContributeSheetState extends State<_ContributeSheet> {
+  late final TextEditingController _amountCtrl;
+  final _selected = Rxn<Account>();
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Get.find<FinanceRepository>();
+    final purchase = widget.stat.purchase;
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Cotiser — ${purchase.title}",
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Cagnotte : ${fcfa(widget.stat.saved)} / ${fcfa(purchase.targetCost)} · reste ${fcfa(widget.stat.remaining)}",
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              LabeledField(
+                label: "Compte source",
+                hint: "D'où part l'argent ?",
+                child: _sheetAccountSelector(
+                  context,
+                  selected: _selected,
+                  accounts: repo.personalAccounts,
+                  emptyLabel: "Choisir un compte personnel",
+                  title: "Compte source",
+                ),
+              ),
+              AmountField(
+                controller: _amountCtrl,
+                label: "Montant de la cotisation",
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final amount = parseAmount(_amountCtrl.text) ?? 0;
+                    final account = _selected.value;
+                    if (amount <= 0) {
+                      errorSnack(AppException(
+                          "La cotisation doit être supérieure à 0 FCFA."));
+                      return;
+                    }
+                    if (account == null) {
+                      errorSnack(AppException(
+                          "Choisissez le compte source de la cotisation."));
+                      return;
+                    }
+                    try {
+                      repo.contributePurchase(
+                        purchaseId: purchase.id,
+                        fromAccountId: account.id,
+                        amount: amount,
+                      );
+                      Navigator.of(context).pop();
+                      successSnack(
+                          "Cotisation enregistrée", fcfa(amount));
+                    } catch (e) {
+                      errorSnack(e);
+                    }
+                  },
+                  icon: const Icon(Icons.check, size: 19),
+                  label: const Text("Confirmer la cotisation"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
