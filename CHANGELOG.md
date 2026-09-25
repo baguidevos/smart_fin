@@ -5,6 +5,21 @@ Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0
 
 ---
 
+## [1.1.3] - 2026-09-25
+
+### Corrigé & Amélioré
+- **Règle d'or financière des Enveloppes Budgétaires (Allocation Nette)** :
+  - Résolution de l'incohérence entre les jauges d'enveloppes du Dashboard et les soldes réels de l'onglet Comptes.
+  - Tout virement interne ou cotisation sortant d'une enveloppe est désormais automatiquement déduit de son allocation nette (`allocated`), conformément aux normes comptables et à la méthode Zero-Based Budgeting (YNAB).
+  - Élimination absolue du risque de double comptage : un virement interne sortant vers un compte personnel n'est plus artificiellement confondu avec une dépense.
+  - Préservation de la parité comptable au franc près : `Solde = Alloué net − Consommé`.
+- **Fiabilisation des données de démonstration (`seedDemo`)** :
+  - Ajustement des montants de cotisations dans le scénario de test pour éliminer l'exception de solde insuffisant lors de l'exploration de la démo.
+- **Documentation d'audit financier** :
+  - Ajout du document technique et financier de référence [`docs/ANALYSE_COHERENCE_ENVELOPPES.md`](docs/ANALYSE_COHERENCE_ENVELOPPES.md).
+
+---
+
 ## [1.1.2] - 2026-09-22
 
 ### Corrigé

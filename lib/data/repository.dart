@@ -267,7 +267,10 @@ class FinanceRepository extends GetxService {
     return sorted;
   }
 
-  /// Statistiques d'enveloppes (allocation vs consommation sur 30 jours).
+  /// Statistiques d'enveloppes (allocation nette vs consommation sur 30 jours).
+  /// Règle d'or financière : les virements sortants réduisent l'allocation
+  /// nette (réallocation budgétaire) au lieu d'être comptés comme une dépense,
+  /// évitant le double comptage et garantissant la parité exacte avec le solde du compte.
   List<({Account account, int allocated, int consumed})> envelopeStats30j() {
     final since = _since30d;
     return activeAccounts
@@ -277,14 +280,22 @@ class FinanceRepository extends GetxService {
       var consumed = 0;
       for (final t in transactions) {
         if (t.date.isBefore(since)) continue;
+        // Entrées sur l'enveloppe (ventilations de revenus, virements entrants)
         if (t.toAccountId == e.id && t.type != TxType.debtIn) {
           allocated += t.amount;
         }
+        // Règle d'or : réallocations / sorties vers d'autres comptes personnels
+        if (t.fromAccountId == e.id &&
+            (t.type == TxType.transfer || t.type == TxType.contribution)) {
+          allocated -= t.amount;
+        }
+        // Consommation directe réelle (dépenses effectives)
         if (t.type == TxType.expense && t.fromAccountId == e.id) {
           consumed += t.amount;
         }
       }
-      return (account: e, allocated: allocated, consumed: consumed);
+      final netAllocated = allocated > 0 ? allocated : 0;
+      return (account: e, allocated: netAllocated, consumed: consumed);
     }).toList()
       ..sort((a, b) => b.consumed.compareTo(a.consumed));
   }
@@ -1758,7 +1769,7 @@ class FinanceRepository extends GetxService {
     contributePurchase(
         purchaseId: matelas.id, fromAccountId: epargne.id, amount: 60000, date: daysAgo(19));
     contributePurchase(
-        purchaseId: matelas.id, fromAccountId: epargne.id, amount: 30000, date: daysAgo(5));
+        purchaseId: matelas.id, fromAccountId: epargne.id, amount: 10000, date: daysAgo(5));
 
     // -- fonds tiers (fiducie) avec détournement partiel
     final fonds = addFund(

@@ -156,7 +156,7 @@ extension TxTypeX on TxType {
 }
 
 /// Version actuelle de l'application.
-const String kAppVersion = '1.1.2';
+const String kAppVersion = '1.1.3';
 
 /// Entrée du journal des versions (changelog).
 class ChangelogEntry {
@@ -175,6 +175,17 @@ class ChangelogEntry {
 
 /// Historique complet des versions et nouveautés de l'application.
 const List<ChangelogEntry> kChangelog = [
+  ChangelogEntry(
+    version: '1.1.3',
+    date: '25 septembre 2026',
+    title: 'Règle d\'or financière des enveloppes & Cohérence Dashboard / Comptes',
+    changes: [
+      'Enveloppes budgétaires : adoption de la règle d\'or de l\'allocation nette déduisant automatiquement les virements internes et réallocations sortants.',
+      'Élimination du risque de double comptage entre virements internes et dépenses réelles de consommation.',
+      'Cohérence comptable parfaite : adéquation exacte au franc près entre les jauges d\'enveloppes du Dashboard et les soldes réels de l\'onglet Comptes.',
+      'Fiabilisation du scénario de démonstration et protection contre les dépassements d\'épargne.',
+    ],
+  ),
   ChangelogEntry(
     version: '1.1.2',
     date: '22 septembre 2026',

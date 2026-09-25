@@ -77,14 +77,13 @@ jobs:
 
             Application mobile de gestion financière personnelle intelligente (devise FCFA, 100 % hors-ligne).
 
-            #### ✨ Principales fonctionnalités :
-            * 🏠 **Tableau de bord** : Patrimoine net, Argent du jour, flux des 30 derniers jours et répartition des dépenses.
-            * 📥 **Encaissements ventilés** : Répartition obligatoire du montant total sur les comptes.
-            * 🧾 **Dettes & Emprunts** : Suivi des remboursements avec plafonnement automatique.
-            * 🤝 **Fonds tiers (fiducie)** : Dépenses objet, traçabilité des détournements et créances internes.
-            * 👥 **Tontines & Achats planifiés** : Suivi des tours de table et cagnottes d'achats.
+            #### 🌟 Nouveautés de la version ${{ steps.get_version.outputs.tag }} :
+            * 📐 **Règle d'or financière des Enveloppes Budgétaires** : Déduction automatique des virements internes sortants et cotisations de l'allocation nette pour garantir une concordance comptable parfaite avec les soldes de l'onglet Comptes (`Solde = Alloué net − Consommé`).
+            * 🛡️ **Élimination du risque de double comptage** : Séparation stricte entre flux de trésorerie interne et dépenses réelles de consommation.
+            * 🧪 **Fiabilisation du scénario de démonstration** : Correction des montants de cotisations dans `seedDemo()` pour éliminer l'erreur de solde insuffisant.
+            * 📄 **Documentation d'audit financier** : Intégration du guide de référence sur la cohérence des enveloppes budgétaires.
 
             #### 📲 Installation :
-            Téléchargez l'APK ci-dessous pour installer l'application sur votre appareil Android.
+            Téléchargez le fichier APK ci-dessous pour installer ou mettre à jour SmartFin sur votre appareil Android.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -8,7 +8,7 @@
 (devise **FCFA**, interface 100 % française, 100 % hors-ligne).
 
 🌐 **Site officiel & Présentation** : [https://baguidevos.github.io/smart_fin/](https://baguidevos.github.io/smart_fin/)  
-📲 **Télécharger l'APK directement** : [SmartFin-v1.1.2.apk](https://github.com/baguidevos/smart_fin/releases/download/v1.1.2/SmartFin-v1.1.2.apk)
+📲 **Télécharger l'APK directement** : [SmartFin-v1.1.3.apk](https://github.com/baguidevos/smart_fin/releases/download/v1.1.3/SmartFin-v1.1.3.apk)
 
 > Gestion de routes, d'état et d'injection de dépendances : **GetX**.
 

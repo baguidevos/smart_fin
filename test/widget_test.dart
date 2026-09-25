@@ -145,13 +145,49 @@ void main() {
     });
 
     test('App version and changelog test', () {
-      expect(kAppVersion, '1.1.2');
-      expect(kChangelog.length, 5);
-      expect(kChangelog.first.version, '1.1.2');
+      expect(kAppVersion, '1.1.3');
+      expect(kChangelog.length, 6);
+      expect(kChangelog.first.version, '1.1.3');
+      expect(kChangelog.any((e) => e.version == '1.1.2'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.1.1'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.1.0'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.0.1'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.0.0'), isTrue);
+    });
+
+    test('Envelope net allocation Golden Rule test (reallocation via transfer)', () {
+      final repo = FinanceRepository();
+      repo.resetAll();
+
+      final wallet = repo.addAccount(name: 'Caisse', role: AccountRole.wallet, initialBalance: 50000);
+      final envelope = repo.addAccount(name: 'Imprévus', role: AccountRole.envelope);
+
+      // 1. Allocation initiale de 15 000 FCFA par virement entrant
+      repo.transfer(amount: 15000, fromAccountId: wallet.id, toAccountId: envelope.id, label: 'Dotation');
+      expect(repo.accountById(envelope.id)!.balance, 15000);
+
+      var stats = repo.envelopeStats30j().firstWhere((e) => e.account.id == envelope.id);
+      expect(stats.allocated, 15000);
+      expect(stats.consumed, 0);
+
+      // 2. Règle d'or : réallocation sortante de 10 000 FCFA vers un compte personnel
+      repo.transfer(amount: 10000, fromAccountId: envelope.id, toAccountId: wallet.id, label: 'Réallocation');
+      expect(repo.accountById(envelope.id)!.balance, 5000);
+
+      stats = repo.envelopeStats30j().firstWhere((e) => e.account.id == envelope.id);
+      // L'allocation nette est automatiquement ajustée à 5 000 FCFA
+      expect(stats.allocated, 5000);
+      expect(stats.consumed, 0);
+
+      // 3. Dépense directe de 2 000 FCFA
+      repo.addExpense(amount: 2000, label: 'Urgence', accountId: envelope.id, category: 'Santé');
+      expect(repo.accountById(envelope.id)!.balance, 3000);
+
+      stats = repo.envelopeStats30j().firstWhere((e) => e.account.id == envelope.id);
+      expect(stats.allocated, 5000);
+      expect(stats.consumed, 2000);
+      // Parité comptable absolue : Solde = Alloué net - Consommé
+      expect(stats.allocated - stats.consumed, repo.accountById(envelope.id)!.balance);
     });
 
     test('Income, Expense and Transfer amount modification tests with FinanceRepository', () async {
