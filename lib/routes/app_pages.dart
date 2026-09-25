@@ -7,6 +7,7 @@ library;
 
 import 'package:get/get.dart';
 
+import '../modules/accounts/account_detail_view.dart';
 import '../modules/accounts/account_form_view.dart';
 import '../modules/accounts/accounts_view.dart';
 import '../modules/debts/debt_detail_view.dart';
@@ -102,6 +103,12 @@ abstract final class AppPages {
       page: () => const AccountFormView(),
       binding:
           BindingsBuilder(() => Get.lazyPut(() => AccountFormController())),
+    ),
+    GetPage(
+      name: Routes.accountDetail,
+      page: () => const AccountDetailView(),
+      binding:
+          BindingsBuilder(() => Get.lazyPut(() => AccountDetailController())),
     ),
 
     // ---- dettes -----------------------------------------------------------------

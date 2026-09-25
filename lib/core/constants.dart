@@ -156,7 +156,7 @@ extension TxTypeX on TxType {
 }
 
 /// Version actuelle de l'application.
-const String kAppVersion = '1.1.3';
+const String kAppVersion = '1.2.3';
 
 /// Entrée du journal des versions (changelog).
 class ChangelogEntry {
@@ -175,6 +175,18 @@ class ChangelogEntry {
 
 /// Historique complet des versions et nouveautés de l'application.
 const List<ChangelogEntry> kChangelog = [
+  ChangelogEntry(
+    version: '1.2.3',
+    date: '25 septembre 2026',
+    title: 'Détail de compte, historique complet & Graphiques mensuels (fl_chart)',
+    changes: [
+      'Vue détaillée de compte : accès direct à l\'historique complet d\'un compte en cliquant sur sa tuile dans l\'onglet Comptes.',
+      'Graphique mensuel interactif (fl_chart) : barres comparatives visualisant les flux d\'entrées (crédits) et de sorties (débits) sur les 6 derniers mois.',
+      'Filtrage interactif par mois : touchez une barre mensuelle pour filtrer instantanément les opérations du mois sélectionné.',
+      'Synthèse financière par compte : total des entrées, total des sorties, solde actuel et repères budgétaires.',
+      'Affichage orienté compte : typologie claire des flux (+ en vert pour entrées, − en rouge pour sorties) avec mention des comptes partenaires de virement.',
+    ],
+  ),
   ChangelogEntry(
     version: '1.1.3',
     date: '25 septembre 2026',

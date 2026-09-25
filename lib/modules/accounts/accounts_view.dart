@@ -214,7 +214,7 @@ class _AccountTile extends StatelessWidget {
           ),
         ],
       ),
-      onTap: () => Get.toNamed(Routes.accountForm, arguments: account.id),
+      onTap: () => Get.toNamed(Routes.accountDetail, arguments: account.id),
     );
 
     return archived ? Opacity(opacity: 0.6, child: tile) : tile;

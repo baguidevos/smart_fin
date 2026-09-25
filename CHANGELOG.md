@@ -5,6 +5,22 @@ Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0
 
 ---
 
+## [1.2.3] - 2026-09-25
+
+### Ajouté & Amélioré
+- **Détail complet d'un compte au clic dans l'onglet Comptes (`AccountDetailView`)** :
+  - En appuyant sur n'importe quel compte dans l'onglet **Comptes**, ouverture d'un écran dédié présentant la carte héros du solde, le budget mensuel paramétré et le récapitulatif des flux.
+  - Journal complet de toutes les opérations concernant le compte (crédits, débits, ventilations, virements partenaires).
+  - Affichage comptable orienté compte : montant préfixé d'un `+` en vert émeraude pour les entrées, ou d'un `−` en rouge pour les sorties.
+- **Graphique mensuel interactif des flux (`fl_chart`)** :
+  - Visualisation comparative par mois sous forme d'histogramme double barre (Entrées en vert vs Sorties en rouge) sur les 6 derniers mois.
+  - Infobulle interactive au toucher révélant le libellé complet du mois et les montants exacts en FCFA.
+  - Filtrage instantané : touchez une barre mensuelle pour filtrer immédiatement la liste des opérations du mois choisi, avec bouton de réinitialisation rapide.
+- **Synthèse financière par compte** :
+  - Indicateurs clés en en-tête : Total des entrées cumulées et Total des sorties cumulées.
+
+---
+
 ## [1.1.3] - 2026-09-25
 
 ### Corrigé & Amélioré

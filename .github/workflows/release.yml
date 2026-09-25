@@ -78,10 +78,11 @@ jobs:
             Application mobile de gestion financière personnelle intelligente (devise FCFA, 100 % hors-ligne).
 
             #### 🌟 Nouveautés de la version ${{ steps.get_version.outputs.tag }} :
-            * 📐 **Règle d'or financière des Enveloppes Budgétaires** : Déduction automatique des virements internes sortants et cotisations de l'allocation nette pour garantir une concordance comptable parfaite avec les soldes de l'onglet Comptes (`Solde = Alloué net − Consommé`).
-            * 🛡️ **Élimination du risque de double comptage** : Séparation stricte entre flux de trésorerie interne et dépenses réelles de consommation.
-            * 🧪 **Fiabilisation du scénario de démonstration** : Correction des montants de cotisations dans `seedDemo()` pour éliminer l'erreur de solde insuffisant.
-            * 📄 **Documentation d'audit financier** : Intégration du guide de référence sur la cohérence des enveloppes budgétaires.
+            * 📊 **Vue détaillée de compte & Historique complet (`AccountDetailView`)** : Accès instantané à l'historique complet d'un compte en cliquant sur sa tuile dans l'onglet Comptes.
+            * 📈 **Graphique mensuel interactif (`fl_chart`)** : Histogramme comparatif double barre visualisant les flux d'entrées (crédits) et de sorties (débits) sur les 6 derniers mois.
+            * 🔍 **Filtrage mensuel tactile** : Touchez une barre mensuelle pour filtrer en direct les opérations du mois correspondant.
+            * 💎 **Synthèse financière par compte** : Total des entrées, total des sorties, solde actuel et repères budgétaires au même endroit.
+            * 📐 **Règle d'or des enveloppes budgétaires** : Déduction automatique des virements internes sortants de l'allocation nette pour une concordance comptable parfaite (`Solde = Alloué net − Consommé`).
 
             #### 📲 Installation :
             Téléchargez le fichier APK ci-dessous pour installer ou mettre à jour SmartFin sur votre appareil Android.

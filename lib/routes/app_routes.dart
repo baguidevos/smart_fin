@@ -26,6 +26,7 @@ abstract final class Routes {
 
   // ---- comptes --------------------------------------------------------------
   static const accountForm = '/account-form';
+  static const accountDetail = '/account-detail';
 
   // ---- dettes ----------------------------------------------------------------
   static const debtForm = '/debt-form';

@@ -11,6 +11,7 @@ import 'package:samafi_mobile/core/constants.dart';
 import 'package:samafi_mobile/core/format.dart';
 import 'package:samafi_mobile/data/models.dart';
 import 'package:samafi_mobile/data/repository.dart';
+import 'package:samafi_mobile/modules/accounts/account_detail_view.dart';
 import 'package:samafi_mobile/shared/widgets.dart';
 
 void main() {
@@ -145,9 +146,10 @@ void main() {
     });
 
     test('App version and changelog test', () {
-      expect(kAppVersion, '1.1.3');
-      expect(kChangelog.length, 6);
-      expect(kChangelog.first.version, '1.1.3');
+      expect(kAppVersion, '1.2.3');
+      expect(kChangelog.length, 7);
+      expect(kChangelog.first.version, '1.2.3');
+      expect(kChangelog.any((e) => e.version == '1.1.3'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.1.2'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.1.1'), isTrue);
       expect(kChangelog.any((e) => e.version == '1.1.0'), isTrue);
@@ -188,6 +190,57 @@ void main() {
       expect(stats.consumed, 2000);
       // Parité comptable absolue : Solde = Alloué net - Consommé
       expect(stats.allocated - stats.consumed, repo.accountById(envelope.id)!.balance);
+    });
+
+    test('AccountDetailController full history and monthly stats test', () {
+      final repo = FinanceRepository();
+      repo.resetAll();
+      Get.reset();
+      Get.put<FinanceRepository>(repo);
+
+      final account = repo.addAccount(
+        name: 'Compte Courant',
+        role: AccountRole.wallet,
+        initialBalance: 100000,
+      );
+
+      // Dépense de 15 000 FCFA
+      repo.addExpense(amount: 15000, label: 'Course supermarché', accountId: account.id, category: 'Alimentation');
+
+      // Virement entrant de 30 000 FCFA depuis un autre compte
+      final epargne = repo.addAccount(name: 'Épargne Test', role: AccountRole.savings, initialBalance: 50000);
+      repo.transfer(amount: 30000, fromAccountId: epargne.id, toAccountId: account.id, label: 'Rapatriement');
+
+      // Initialisation du contrôleur de détail de compte avec l'argument account.id
+      final controller = AccountDetailController(accountId: account.id);
+
+      expect(controller.account, isNotNull);
+      expect(controller.account!.name, 'Compte Courant');
+
+      // Vérification des transactions du compte
+      final txs = controller.allTransactions;
+      expect(txs.length, 3); // Solde initial + dépense + virement entrant
+
+      // Vérification des totaux entrées / sorties
+      expect(controller.totalInflow, 130000); // 100 000 (initial) + 30 000 (virement)
+      expect(controller.totalOutflow, 15000); // 15 000 (dépense)
+
+      // Vérification des statistiques mensuelles (6 derniers mois)
+      final monthly = controller.monthlyStats;
+      expect(monthly.length, 6);
+      final currentMonthStat = monthly.last;
+      expect(currentMonthStat.inflow, 130000);
+      expect(currentMonthStat.outflow, 15000);
+      expect(currentMonthStat.net, 115000);
+
+      // Test du filtre par mois
+      expect(controller.selectedMonthKey.value, isNull);
+      controller.toggleMonthFilter(currentMonthStat.monthKey);
+      expect(controller.selectedMonthKey.value, currentMonthStat.monthKey);
+      expect(controller.displayedTransactions.length, 3);
+
+      controller.clearFilter();
+      expect(controller.selectedMonthKey.value, isNull);
     });
 
     test('Income, Expense and Transfer amount modification tests with FinanceRepository', () async {
